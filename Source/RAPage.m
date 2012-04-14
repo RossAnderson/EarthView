@@ -3,7 +3,7 @@
 //  Jetsnapper
 //
 //  Created by Ross Anderson on 3/11/12.
-//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//  Copyright (c) 2012 Ross Anderson. All rights reserved.
 //
 
 #import "RAPage.h"

@@ -333,14 +333,12 @@
     glClearColor(0.0f, 0.0f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    /*
     // render the skybox
     glDisable(GL_DEPTH_TEST);
     [skybox prepareToDraw];
     [skybox draw];
     glEnable(GL_DEPTH_TEST);
     glClear(GL_DEPTH_BUFFER_BIT);
-    */
     
     // run the render visitor
     [renderVisitor clear];

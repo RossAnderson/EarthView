@@ -387,8 +387,16 @@
         [_removePages enumerateObjectsUsingBlock:^(RAPage *page, BOOL *stop) {
             [nodes removeChild: page.geometry];
             [page releaseGL];
+            
+            // delete the page data if not a root page
+            if ( ! [rootPages containsObject:page] ) {
+                page.image = nil;
+                page.geometry = nil;
+            }
         }];
         
+        // this section would replace the page deletion above, but it doesn't quite work well yet
+        /*
         [_removePages minusSet: rootPages];
         NSUInteger totalPages = _insertPages.count + _removePages.count + _activePages.count;
         NSUInteger maxPages = 100;
@@ -413,6 +421,7 @@
                 if ( page.isLeaf ) [page prune];
             }];
         }
+        */
         
         _insertPages = nil;
         _removePages = nil;

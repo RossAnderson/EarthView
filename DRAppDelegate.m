@@ -51,11 +51,13 @@
             database.baseUrlString = @"http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png";
             database.maxzoom = 17;
             break;
+        /*
         case 5:
         default:
             // Stamen Maps Watercolor - http://maps.stamen.com/watercolor
-            database.baseUrlString = @"http://tile.stamen.com/watercolor/{z}/{x}/{y}.png";
+            database.baseUrlString = @"http://a.tile.stamen.com/watercolor/{z}/{x}/{y}.png";
             database.maxzoom = 17;
+        */
     }
     
     self.window.rootViewController = self.viewController;

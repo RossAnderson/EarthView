@@ -3,7 +3,7 @@
 //  RASceneGraphTest
 //
 //  Created by Ross Anderson on 2/19/12.
-//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//  Copyright (c) 2012 Ross Anderson. All rights reserved.
 //
 
 #import "RASceneGraphController.h"

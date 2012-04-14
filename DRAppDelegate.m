@@ -3,7 +3,7 @@
 //  EarthViewExample
 //
 //  Created by Ross Anderson on 4/14/12.
-//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//  Copyright (c) 2012 Ross Anderson. All rights reserved.
 //
 
 #import "DRAppDelegate.h"

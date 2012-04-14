@@ -244,6 +244,7 @@
 			attributes = {
 				CLASSPREFIX = DR;
 				LastUpgradeCheck = 0430;
+				ORGANIZATIONNAME = "Ross Anderson";
 			};
 			buildConfigurationList = 91F77E1C1539335000F8AE05 /* Build configuration list for PBXProject "EarthViewExample" */;
 			compatibilityVersion = "Xcode 3.2";

@@ -1,0 +1,429 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		91F77E271539335000F8AE05 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91F77E261539335000F8AE05 /* UIKit.framework */; };
+		91F77E291539335000F8AE05 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91F77E281539335000F8AE05 /* Foundation.framework */; };
+		91F77E2B1539335000F8AE05 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91F77E2A1539335000F8AE05 /* CoreGraphics.framework */; };
+		91F77E2D1539335000F8AE05 /* GLKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91F77E2C1539335000F8AE05 /* GLKit.framework */; };
+		91F77E2F1539335000F8AE05 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91F77E2E1539335000F8AE05 /* OpenGLES.framework */; };
+		91F77E351539335100F8AE05 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 91F77E331539335100F8AE05 /* InfoPlist.strings */; };
+		91F77E451539335100F8AE05 /* SceneView_iPhone.xib in Resources */ = {isa = PBXBuildFile; fileRef = 91F77E431539335100F8AE05 /* SceneView_iPhone.xib */; };
+		91F77E481539335100F8AE05 /* SceneView_iPad.xib in Resources */ = {isa = PBXBuildFile; fileRef = 91F77E461539335100F8AE05 /* SceneView_iPad.xib */; };
+		91F77E891539342A00F8AE05 /* clear256.png in Resources */ = {isa = PBXBuildFile; fileRef = 91F77E851539342A00F8AE05 /* clear256.png */; };
+		91F77E8B1539342A00F8AE05 /* grid256.png in Resources */ = {isa = PBXBuildFile; fileRef = 91F77E871539342A00F8AE05 /* grid256.png */; };
+		91F77E8C1539342A00F8AE05 /* star1.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 91F77E881539342A00F8AE05 /* star1.jpg */; };
+		91F77E951539C31E00F8AE05 /* DRAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E3A1539335100F8AE05 /* DRAppDelegate.m */; };
+		91F77E961539C31E00F8AE05 /* RABoundingSphere.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E551539341B00F8AE05 /* RABoundingSphere.m */; };
+		91F77E971539C31E00F8AE05 /* RACamera.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E571539341B00F8AE05 /* RACamera.m */; };
+		91F77E981539C31E00F8AE05 /* RAGeographicUtils.c in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E581539341B00F8AE05 /* RAGeographicUtils.c */; };
+		91F77E991539C32D00F8AE05 /* RAGeometry.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E5B1539341B00F8AE05 /* RAGeometry.m */; };
+		91F77E9A1539C32D00F8AE05 /* RAGroup.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E5D1539341B00F8AE05 /* RAGroup.m */; };
+		91F77E9B1539C32D00F8AE05 /* RAManipulator.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E5F1539341B00F8AE05 /* RAManipulator.m */; };
+		91F77E9C1539C32D00F8AE05 /* RANode.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E611539341B00F8AE05 /* RANode.m */; };
+		91F77E9D1539C32D00F8AE05 /* RANodeVisitor.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E631539341B00F8AE05 /* RANodeVisitor.m */; };
+		91F77E9E1539C32D00F8AE05 /* RAPage.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E651539341B00F8AE05 /* RAPage.m */; };
+		91F77E9F1539C32D00F8AE05 /* RARenderVisitor.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E671539341B00F8AE05 /* RARenderVisitor.m */; };
+		91F77EA01539C32D00F8AE05 /* RASceneGraphController.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E691539341B00F8AE05 /* RASceneGraphController.m */; };
+		91F77EA11539C32D00F8AE05 /* RATextureWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E6B1539341B00F8AE05 /* RATextureWrapper.m */; };
+		91F77EA21539C32D00F8AE05 /* RATileDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E6D1539341B00F8AE05 /* RATileDatabase.m */; };
+		91F77EA31539C32D00F8AE05 /* RATilePager.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E6F1539341B00F8AE05 /* RATilePager.m */; };
+		91F77EA41539C32D00F8AE05 /* RATransform.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E711539341B00F8AE05 /* RATransform.m */; };
+		91F77EA51539C32D00F8AE05 /* TPPropertyAnimation.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E731539341B00F8AE05 /* TPPropertyAnimation.m */; };
+		91F77EA7153A089A00F8AE05 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91F77EA6153A089A00F8AE05 /* QuartzCore.framework */; };
+		91F77EA8153A08C300F8AE05 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E8D1539349900F8AE05 /* main.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		91F77E221539335000F8AE05 /* EarthViewExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EarthViewExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		91F77E261539335000F8AE05 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		91F77E281539335000F8AE05 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		91F77E2A1539335000F8AE05 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		91F77E2C1539335000F8AE05 /* GLKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLKit.framework; path = System/Library/Frameworks/GLKit.framework; sourceTree = SDKROOT; };
+		91F77E2E1539335000F8AE05 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
+		91F77E321539335000F8AE05 /* EarthViewExample-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "EarthViewExample-Info.plist"; sourceTree = "<group>"; };
+		91F77E341539335100F8AE05 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		91F77E381539335100F8AE05 /* EarthViewExample-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "EarthViewExample-Prefix.pch"; sourceTree = "<group>"; };
+		91F77E391539335100F8AE05 /* DRAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DRAppDelegate.h; sourceTree = "<group>"; };
+		91F77E3A1539335100F8AE05 /* DRAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DRAppDelegate.m; sourceTree = SOURCE_ROOT; };
+		91F77E441539335100F8AE05 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/SceneView_iPhone.xib; sourceTree = "<group>"; };
+		91F77E471539335100F8AE05 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/SceneView_iPad.xib; sourceTree = "<group>"; };
+		91F77E541539341B00F8AE05 /* RABoundingSphere.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RABoundingSphere.h; sourceTree = "<group>"; };
+		91F77E551539341B00F8AE05 /* RABoundingSphere.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RABoundingSphere.m; sourceTree = "<group>"; };
+		91F77E561539341B00F8AE05 /* RACamera.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RACamera.h; sourceTree = "<group>"; };
+		91F77E571539341B00F8AE05 /* RACamera.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RACamera.m; sourceTree = "<group>"; };
+		91F77E581539341B00F8AE05 /* RAGeographicUtils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = RAGeographicUtils.c; sourceTree = "<group>"; };
+		91F77E591539341B00F8AE05 /* RAGeographicUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RAGeographicUtils.h; sourceTree = "<group>"; };
+		91F77E5A1539341B00F8AE05 /* RAGeometry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RAGeometry.h; sourceTree = "<group>"; };
+		91F77E5B1539341B00F8AE05 /* RAGeometry.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RAGeometry.m; sourceTree = "<group>"; };
+		91F77E5C1539341B00F8AE05 /* RAGroup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RAGroup.h; sourceTree = "<group>"; };
+		91F77E5D1539341B00F8AE05 /* RAGroup.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RAGroup.m; sourceTree = "<group>"; };
+		91F77E5E1539341B00F8AE05 /* RAManipulator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RAManipulator.h; sourceTree = "<group>"; };
+		91F77E5F1539341B00F8AE05 /* RAManipulator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RAManipulator.m; sourceTree = "<group>"; };
+		91F77E601539341B00F8AE05 /* RANode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RANode.h; sourceTree = "<group>"; };
+		91F77E611539341B00F8AE05 /* RANode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RANode.m; sourceTree = "<group>"; };
+		91F77E621539341B00F8AE05 /* RANodeVisitor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RANodeVisitor.h; sourceTree = "<group>"; };
+		91F77E631539341B00F8AE05 /* RANodeVisitor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RANodeVisitor.m; sourceTree = "<group>"; };
+		91F77E641539341B00F8AE05 /* RAPage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RAPage.h; sourceTree = "<group>"; };
+		91F77E651539341B00F8AE05 /* RAPage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RAPage.m; sourceTree = "<group>"; };
+		91F77E661539341B00F8AE05 /* RARenderVisitor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RARenderVisitor.h; sourceTree = "<group>"; };
+		91F77E671539341B00F8AE05 /* RARenderVisitor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RARenderVisitor.m; sourceTree = "<group>"; };
+		91F77E681539341B00F8AE05 /* RASceneGraphController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RASceneGraphController.h; sourceTree = "<group>"; };
+		91F77E691539341B00F8AE05 /* RASceneGraphController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RASceneGraphController.m; sourceTree = "<group>"; };
+		91F77E6A1539341B00F8AE05 /* RATextureWrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RATextureWrapper.h; sourceTree = "<group>"; };
+		91F77E6B1539341B00F8AE05 /* RATextureWrapper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RATextureWrapper.m; sourceTree = "<group>"; };
+		91F77E6C1539341B00F8AE05 /* RATileDatabase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RATileDatabase.h; sourceTree = "<group>"; };
+		91F77E6D1539341B00F8AE05 /* RATileDatabase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RATileDatabase.m; sourceTree = "<group>"; };
+		91F77E6E1539341B00F8AE05 /* RATilePager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RATilePager.h; sourceTree = "<group>"; };
+		91F77E6F1539341B00F8AE05 /* RATilePager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RATilePager.m; sourceTree = "<group>"; };
+		91F77E701539341B00F8AE05 /* RATransform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RATransform.h; sourceTree = "<group>"; };
+		91F77E711539341B00F8AE05 /* RATransform.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RATransform.m; sourceTree = "<group>"; };
+		91F77E721539341B00F8AE05 /* TPPropertyAnimation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TPPropertyAnimation.h; sourceTree = "<group>"; };
+		91F77E731539341B00F8AE05 /* TPPropertyAnimation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TPPropertyAnimation.m; sourceTree = "<group>"; };
+		91F77E851539342A00F8AE05 /* clear256.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = clear256.png; sourceTree = "<group>"; };
+		91F77E871539342A00F8AE05 /* grid256.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = grid256.png; sourceTree = "<group>"; };
+		91F77E881539342A00F8AE05 /* star1.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = star1.jpg; sourceTree = "<group>"; };
+		91F77E8D1539349900F8AE05 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = SOURCE_ROOT; };
+		91F77EA6153A089A00F8AE05 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		91F77E1F1539335000F8AE05 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				91F77EA7153A089A00F8AE05 /* QuartzCore.framework in Frameworks */,
+				91F77E271539335000F8AE05 /* UIKit.framework in Frameworks */,
+				91F77E291539335000F8AE05 /* Foundation.framework in Frameworks */,
+				91F77E2B1539335000F8AE05 /* CoreGraphics.framework in Frameworks */,
+				91F77E2D1539335000F8AE05 /* GLKit.framework in Frameworks */,
+				91F77E2F1539335000F8AE05 /* OpenGLES.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		91F77E171539335000F8AE05 = {
+			isa = PBXGroup;
+			children = (
+				91F77E301539335000F8AE05 /* EarthViewExample */,
+				91F77E251539335000F8AE05 /* Frameworks */,
+				91F77E231539335000F8AE05 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		91F77E231539335000F8AE05 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				91F77E221539335000F8AE05 /* EarthViewExample.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		91F77E251539335000F8AE05 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				91F77E261539335000F8AE05 /* UIKit.framework */,
+				91F77E281539335000F8AE05 /* Foundation.framework */,
+				91F77E2A1539335000F8AE05 /* CoreGraphics.framework */,
+				91F77E2C1539335000F8AE05 /* GLKit.framework */,
+				91F77E2E1539335000F8AE05 /* OpenGLES.framework */,
+				91F77EA6153A089A00F8AE05 /* QuartzCore.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		91F77E301539335000F8AE05 /* EarthViewExample */ = {
+			isa = PBXGroup;
+			children = (
+				91F77E391539335100F8AE05 /* DRAppDelegate.h */,
+				91F77E3A1539335100F8AE05 /* DRAppDelegate.m */,
+				91F77E431539335100F8AE05 /* SceneView_iPhone.xib */,
+				91F77E461539335100F8AE05 /* SceneView_iPad.xib */,
+				91F77E531539341B00F8AE05 /* Source */,
+				91F77E841539342A00F8AE05 /* Images */,
+				91F77E311539335000F8AE05 /* Supporting Files */,
+			);
+			path = EarthViewExample;
+			sourceTree = "<group>";
+		};
+		91F77E311539335000F8AE05 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				91F77E321539335000F8AE05 /* EarthViewExample-Info.plist */,
+				91F77E331539335100F8AE05 /* InfoPlist.strings */,
+				91F77E8D1539349900F8AE05 /* main.m */,
+				91F77E381539335100F8AE05 /* EarthViewExample-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		91F77E531539341B00F8AE05 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				91F77E541539341B00F8AE05 /* RABoundingSphere.h */,
+				91F77E551539341B00F8AE05 /* RABoundingSphere.m */,
+				91F77E561539341B00F8AE05 /* RACamera.h */,
+				91F77E571539341B00F8AE05 /* RACamera.m */,
+				91F77E581539341B00F8AE05 /* RAGeographicUtils.c */,
+				91F77E591539341B00F8AE05 /* RAGeographicUtils.h */,
+				91F77E5A1539341B00F8AE05 /* RAGeometry.h */,
+				91F77E5B1539341B00F8AE05 /* RAGeometry.m */,
+				91F77E5C1539341B00F8AE05 /* RAGroup.h */,
+				91F77E5D1539341B00F8AE05 /* RAGroup.m */,
+				91F77E5E1539341B00F8AE05 /* RAManipulator.h */,
+				91F77E5F1539341B00F8AE05 /* RAManipulator.m */,
+				91F77E601539341B00F8AE05 /* RANode.h */,
+				91F77E611539341B00F8AE05 /* RANode.m */,
+				91F77E621539341B00F8AE05 /* RANodeVisitor.h */,
+				91F77E631539341B00F8AE05 /* RANodeVisitor.m */,
+				91F77E641539341B00F8AE05 /* RAPage.h */,
+				91F77E651539341B00F8AE05 /* RAPage.m */,
+				91F77E661539341B00F8AE05 /* RARenderVisitor.h */,
+				91F77E671539341B00F8AE05 /* RARenderVisitor.m */,
+				91F77E681539341B00F8AE05 /* RASceneGraphController.h */,
+				91F77E691539341B00F8AE05 /* RASceneGraphController.m */,
+				91F77E6A1539341B00F8AE05 /* RATextureWrapper.h */,
+				91F77E6B1539341B00F8AE05 /* RATextureWrapper.m */,
+				91F77E6C1539341B00F8AE05 /* RATileDatabase.h */,
+				91F77E6D1539341B00F8AE05 /* RATileDatabase.m */,
+				91F77E6E1539341B00F8AE05 /* RATilePager.h */,
+				91F77E6F1539341B00F8AE05 /* RATilePager.m */,
+				91F77E701539341B00F8AE05 /* RATransform.h */,
+				91F77E711539341B00F8AE05 /* RATransform.m */,
+				91F77E721539341B00F8AE05 /* TPPropertyAnimation.h */,
+				91F77E731539341B00F8AE05 /* TPPropertyAnimation.m */,
+			);
+			path = Source;
+			sourceTree = SOURCE_ROOT;
+		};
+		91F77E841539342A00F8AE05 /* Images */ = {
+			isa = PBXGroup;
+			children = (
+				91F77E851539342A00F8AE05 /* clear256.png */,
+				91F77E871539342A00F8AE05 /* grid256.png */,
+				91F77E881539342A00F8AE05 /* star1.jpg */,
+			);
+			path = Images;
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		91F77E211539335000F8AE05 /* EarthViewExample */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 91F77E4B1539335100F8AE05 /* Build configuration list for PBXNativeTarget "EarthViewExample" */;
+			buildPhases = (
+				91F77E1E1539335000F8AE05 /* Sources */,
+				91F77E1F1539335000F8AE05 /* Frameworks */,
+				91F77E201539335000F8AE05 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = EarthViewExample;
+			productName = EarthViewExample;
+			productReference = 91F77E221539335000F8AE05 /* EarthViewExample.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		91F77E191539335000F8AE05 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				CLASSPREFIX = DR;
+				LastUpgradeCheck = 0430;
+			};
+			buildConfigurationList = 91F77E1C1539335000F8AE05 /* Build configuration list for PBXProject "EarthViewExample" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 91F77E171539335000F8AE05;
+			productRefGroup = 91F77E231539335000F8AE05 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				91F77E211539335000F8AE05 /* EarthViewExample */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		91F77E201539335000F8AE05 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				91F77E351539335100F8AE05 /* InfoPlist.strings in Resources */,
+				91F77E451539335100F8AE05 /* SceneView_iPhone.xib in Resources */,
+				91F77E481539335100F8AE05 /* SceneView_iPad.xib in Resources */,
+				91F77E891539342A00F8AE05 /* clear256.png in Resources */,
+				91F77E8B1539342A00F8AE05 /* grid256.png in Resources */,
+				91F77E8C1539342A00F8AE05 /* star1.jpg in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		91F77E1E1539335000F8AE05 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				91F77EA8153A08C300F8AE05 /* main.m in Sources */,
+				91F77E991539C32D00F8AE05 /* RAGeometry.m in Sources */,
+				91F77E9A1539C32D00F8AE05 /* RAGroup.m in Sources */,
+				91F77E9B1539C32D00F8AE05 /* RAManipulator.m in Sources */,
+				91F77E9C1539C32D00F8AE05 /* RANode.m in Sources */,
+				91F77E9D1539C32D00F8AE05 /* RANodeVisitor.m in Sources */,
+				91F77E9E1539C32D00F8AE05 /* RAPage.m in Sources */,
+				91F77E9F1539C32D00F8AE05 /* RARenderVisitor.m in Sources */,
+				91F77EA01539C32D00F8AE05 /* RASceneGraphController.m in Sources */,
+				91F77EA11539C32D00F8AE05 /* RATextureWrapper.m in Sources */,
+				91F77EA21539C32D00F8AE05 /* RATileDatabase.m in Sources */,
+				91F77EA31539C32D00F8AE05 /* RATilePager.m in Sources */,
+				91F77EA41539C32D00F8AE05 /* RATransform.m in Sources */,
+				91F77EA51539C32D00F8AE05 /* TPPropertyAnimation.m in Sources */,
+				91F77E951539C31E00F8AE05 /* DRAppDelegate.m in Sources */,
+				91F77E961539C31E00F8AE05 /* RABoundingSphere.m in Sources */,
+				91F77E971539C31E00F8AE05 /* RACamera.m in Sources */,
+				91F77E981539C31E00F8AE05 /* RAGeographicUtils.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		91F77E331539335100F8AE05 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				91F77E341539335100F8AE05 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = SOURCE_ROOT;
+		};
+		91F77E431539335100F8AE05 /* SceneView_iPhone.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				91F77E441539335100F8AE05 /* en */,
+			);
+			name = SceneView_iPhone.xib;
+			sourceTree = SOURCE_ROOT;
+		};
+		91F77E461539335100F8AE05 /* SceneView_iPad.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				91F77E471539335100F8AE05 /* en */,
+			);
+			name = SceneView_iPad.xib;
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		91F77E491539335100F8AE05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		91F77E4A1539335100F8AE05 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
+				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		91F77E4C1539335100F8AE05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "EarthViewExample-Prefix.pch";
+				"GCC_THUMB_SUPPORT[arch=armv6]" = "";
+				INFOPLIST_FILE = "EarthViewExample-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		91F77E4D1539335100F8AE05 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "EarthViewExample-Prefix.pch";
+				"GCC_THUMB_SUPPORT[arch=armv6]" = "";
+				INFOPLIST_FILE = "EarthViewExample-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		91F77E1C1539335000F8AE05 /* Build configuration list for PBXProject "EarthViewExample" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				91F77E491539335100F8AE05 /* Debug */,
+				91F77E4A1539335100F8AE05 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		91F77E4B1539335100F8AE05 /* Build configuration list for PBXNativeTarget "EarthViewExample" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				91F77E4C1539335100F8AE05 /* Debug */,
+				91F77E4D1539335100F8AE05 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 91F77E191539335000F8AE05 /* Project object */;
+}

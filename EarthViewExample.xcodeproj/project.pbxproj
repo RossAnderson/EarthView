@@ -37,6 +37,7 @@
 		91F77EA51539C32D00F8AE05 /* TPPropertyAnimation.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E731539341B00F8AE05 /* TPPropertyAnimation.m */; };
 		91F77EA7153A089A00F8AE05 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91F77EA6153A089A00F8AE05 /* QuartzCore.framework */; };
 		91F77EA8153A08C300F8AE05 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E8D1539349900F8AE05 /* main.m */; };
+		91F77EAC153A0F9B00F8AE05 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 91F77EAB153A0F9A00F8AE05 /* LICENSE.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -90,6 +91,7 @@
 		91F77E881539342A00F8AE05 /* star1.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = star1.jpg; sourceTree = "<group>"; };
 		91F77E8D1539349900F8AE05 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = SOURCE_ROOT; };
 		91F77EA6153A089A00F8AE05 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		91F77EAB153A0F9A00F8AE05 /* LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE.txt; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -142,6 +144,7 @@
 		91F77E301539335000F8AE05 /* EarthViewExample */ = {
 			isa = PBXGroup;
 			children = (
+				91F77EAB153A0F9A00F8AE05 /* LICENSE.txt */,
 				91F77E391539335100F8AE05 /* DRAppDelegate.h */,
 				91F77E3A1539335100F8AE05 /* DRAppDelegate.m */,
 				91F77E431539335100F8AE05 /* SceneView_iPhone.xib */,
@@ -270,6 +273,7 @@
 				91F77E891539342A00F8AE05 /* clear256.png in Resources */,
 				91F77E8B1539342A00F8AE05 /* grid256.png in Resources */,
 				91F77E8C1539342A00F8AE05 /* star1.jpg in Resources */,
+				91F77EAC153A0F9B00F8AE05 /* LICENSE.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

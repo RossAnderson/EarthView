@@ -164,10 +164,10 @@
     
     // set material
     geom.material = [GLKEffectPropertyMaterial new];
-    //geom.material.ambientColor = (GLKVector4){ 0.8, 0.8, 0.8, 1.0};
-    geom.material.diffuseColor = (GLKVector4){ 0.8, 0.8, 0.8, 1.0};
+    geom.material.ambientColor = (GLKVector4){ 0.0, 0.0, 0.0, 1.0};
+    geom.material.diffuseColor = (GLKVector4){ 0.5, 0.5, 0.5, 1.0};
     geom.material.specularColor = (GLKVector4){ 1.0, 1.0, 1.0, 1.0};
-    geom.material.shininess = 10.0f;
+    geom.material.shininess = 2.0f;
     
     return geom;
 }

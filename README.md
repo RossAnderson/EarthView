@@ -5,7 +5,7 @@ EarthView is an open-source 3D visualization of the Earth globe for iOS that use
 
 The project uses a quad-tree to page in map tiles that conform to the Tile Map Service standard (or, the flipped Google equivalent). The level of detail to display is determined by the estimated screen-space error of a given page.
 
-Besides fixing the bugs listen below, I am interested in adding topographical detail to the map to make it truly 3D. I intend to load topo height map data using the same map tile system as the visible content.
+Besides fixing the bugs listed below, I am interested in adding topographical terrain detail to the map. I intend to load heightmap data using the same map tile system as the visible content.
 
 Enjoy!
 
@@ -29,8 +29,9 @@ The example application connects to various map tiles services over the web such
 Bugs and Limitations
 --------------------
 
+- Page loading needs to be more progressive. Specifically, high res pages should be generated immediately with a lower-res texture that is replaced when the higher detail image is loaded. Currently the pager waited until all higher-res images are loaded before paging in the children.
 - The paging engine still needs a bit of work to more efficiently unload pages.
 - The sky box does not display on devices although it works in the simulator.
 - No explicit caching is done of map tiles.
-- Lighting of the globe, especially when tilted, needs to be improved.
 - A hole is displayed at the poles because there is no map tile content here.
+- Add support for MBTiles (http://mapbox.com/mbtiles-spec/) for locally stored/cached content

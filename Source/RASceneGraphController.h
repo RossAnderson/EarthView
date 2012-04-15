@@ -11,7 +11,7 @@
 #import "RANode.h"
 #import "RATileDatabase.h"
 
-@interface RASceneGraphController : GLKViewController <UISplitViewControllerDelegate>
+@interface RASceneGraphController : GLKViewController
 
 @property (readonly, nonatomic) RANode * sceneRoot;
 @property (readonly, nonatomic) RATileDatabase * database;

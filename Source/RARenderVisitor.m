@@ -89,16 +89,24 @@
         effect.useConstantColor = child.geometry.color.x > -1;
         effect.constantColor = child.geometry.color;
         
-        if (child.geometry.texture != nil) {
+        if (child.geometry.texture0 != nil) {
             effect.texture2d0.envMode = GLKTextureEnvModeModulate;
             effect.texture2d0.target = GLKTextureTarget2D;
-            effect.texture2d0.name = child.geometry.texture.name;
+            effect.texture2d0.name = child.geometry.texture0.name;
             effect.texture2d0.enabled = YES;
         } else {
-            effect.texture2d0.name = child.geometry.texture.name;
             effect.texture2d0.enabled = NO;
         }
-        
+
+        if (child.geometry.texture1 != nil) {
+            effect.texture2d1.envMode = GLKTextureEnvModeModulate;
+            effect.texture2d1.target = GLKTextureTarget2D;
+            effect.texture2d1.name = child.geometry.texture1.name;
+            effect.texture2d1.enabled = YES;
+        } else {
+            effect.texture2d1.enabled = NO;
+        }
+
         [effect prepareToDraw];
         [child.geometry renderGL];
     }];

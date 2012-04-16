@@ -33,13 +33,15 @@
     
     NSMutableData * _indexData;
     GLint           _indexStride;
+    
+    BOOL            _needsSetup;
 }
 
 @synthesize positionOffset = _positionOffset;
 @synthesize normalOffset = _normalOffset;
 @synthesize colorOffset = _colorOffset;
 @synthesize textureOffset = _textureOffset;
-@synthesize texture = _texture;
+@synthesize texture0 = _texture0, texture1 = _texture1;
 @synthesize color = _color;
 @synthesize material = _material;
 @synthesize elementStyle = _elementStyle;
@@ -63,6 +65,8 @@
         
         _color = GLKVector4Make(-1, -1, -1, -1);
         _elementStyle = GL_TRIANGLES;
+        
+        _needsSetup = YES;
     }
     return self;
 }
@@ -144,6 +148,8 @@
 
 - (void)setupGL
 {
+    if ( _needsSetup == NO ) return;
+    
     // create vertex array if needed
     if ( _vertexArray == BUFFER_INVALID ) {
         glGenVertexArraysOES(1, &_vertexArray);
@@ -184,9 +190,14 @@
         glVertexAttribPointer(GLKVertexAttribColor, 4, GL_FLOAT, GL_FALSE, _vertexStride, (const GLvoid *)_colorOffset);
     }
 
-    if ( _textureOffset >= 0 ) {
+    if ( _textureOffset >= 0 && _texture0 ) {
         glEnableVertexAttribArray(GLKVertexAttribTexCoord0);
         glVertexAttribPointer(GLKVertexAttribTexCoord0, 2, GL_FLOAT, GL_FALSE, _vertexStride, (const GLvoid *)_textureOffset);
+    }
+
+    if ( _textureOffset >= 0 && _texture1 ) {
+        glEnableVertexAttribArray(GLKVertexAttribTexCoord1);
+        glVertexAttribPointer(GLKVertexAttribTexCoord1, 2, GL_FLOAT, GL_FALSE, _vertexStride, (const GLvoid *)_textureOffset);
     }
 
     glBindVertexArrayOES(0);
@@ -201,6 +212,8 @@
     _vertexBuffer = BUFFER_INVALID;
     _indexBuffer = BUFFER_INVALID;
     _vertexArray = BUFFER_INVALID;
+    
+    _needsSetup = YES;
 }
 
 - (void)renderGL

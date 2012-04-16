@@ -20,7 +20,8 @@
 @property (assign, nonatomic) NSInteger colorOffset;    // GLFloat r, g, b, a
 @property (assign, nonatomic) NSInteger textureOffset;  // GLFloat s, t
 
-@property (strong, nonatomic) RATextureWrapper * texture;
+@property (strong, nonatomic) RATextureWrapper * texture0;
+@property (strong, nonatomic) RATextureWrapper * texture1;
 @property (assign, nonatomic) GLKVector4 color;         // set 1st component to -1 to disable
 @property (retain, nonatomic) GLKEffectPropertyMaterial * material;
 @property (assign, nonatomic) GLenum elementStyle;      // default: GL_TRIANGLES

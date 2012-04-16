@@ -24,7 +24,7 @@
 @synthesize geometry = _geometry;
 @synthesize image = _image;
 @synthesize parent = _parent, child1, child2, child3, child4;
-@synthesize buildOp, needsUpdate, lastRequestTime;
+@synthesize lastRequestTime;
 
 - (RAPage *)initWithTileID:(TileID)t andParent:(RAPage *)parent;
 {
@@ -63,32 +63,6 @@
 
 - (BOOL)isLeaf {
     return ( child1 == nil && child2 == nil && child3 == nil && child4 == nil );
-}
-
-- (void)setupGL {
-    if ( self.needsUpdate == NO ) return;
-    
-    // create texture
-    GLKTextureInfo * textureInfo = nil;
-    if ( _image ) {
-        NSError * err = nil;
-        NSDictionary * options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:GLKTextureLoaderOriginBottomLeft];
-        textureInfo = [GLKTextureLoader textureWithCGImage:[_image CGImage] options:options error:&err];
-        if ( err ) NSLog(@"Error loading texture: %@", err);
-
-        self.geometry.texture = [[RATextureWrapper alloc] initWithTextureInfo:textureInfo];
-    } /*else {
-        NSLog(@"No image available for tile %@.", key);
-    }*/
-    
-    self.needsUpdate = NO;
-}
-
-- (void)releaseGL {
-    [self.geometry releaseGL];
-    
-    // release texture
-    self.needsUpdate = YES;
 }
 
 @end

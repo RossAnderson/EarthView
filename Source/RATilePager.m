@@ -14,6 +14,7 @@
 #import <Foundation/Foundation.h>
 #import <GLKit/GLKVector2.h>
 
+//#define ENABLE_GRID_OVERLAY
 
 @interface RAPageDelta : NSObject
 @property (strong) NSSet * pagesToAdd;
@@ -28,6 +29,9 @@
 @implementation RATilePager {
     RATileDatabase *        _database;
     RATextureWrapper *      _defaultTexture;
+#ifdef ENABLE_GRID_OVERLAY
+    RATextureWrapper *      _overlayTexture;
+#endif
     
     NSOperationQueue *      _buildQueue;
     NSOperationQueue *      _loadQueue;
@@ -38,7 +42,7 @@
     NSMutableSet *          _removePages;
 }
 
-@synthesize database = _database, nodes, rootPages, camera;
+@synthesize database = _database, loadingContext, nodes, rootPages, camera;
 
 - (id)init
 {
@@ -200,15 +204,15 @@
 
 - (void)requestPage:(RAPage *)page {
     NSAssert( page != nil, @"the requested page must be valid");
+    page.lastRequestTime = [NSDate timeIntervalSinceReferenceDate];
 
-    if ( page.geometry == nil && page.buildOp == nil ) {
+    if ( page.geometry == nil ) {
         // generate the geometry
-        NSBlockOperation * buildOp = [NSBlockOperation blockOperationWithBlock:^{
-            page.geometry = [self createGeometryForTile:page.tile];
-            page.geometry.texture = _defaultTexture;
-        }];
-        [_buildQueue addOperation: buildOp];
-        page.buildOp = buildOp;
+        page.geometry = [self createGeometryForTile:page.tile];
+        page.geometry.texture0 = _defaultTexture;
+#ifdef ENABLE_GRID_OVERLAY
+        page.geometry.texture1 = _overlayTexture;
+#endif
 
         // request the tile image
 #if 1   /* set this to 0 to skip page loading and display a grid instead */
@@ -216,21 +220,34 @@
         if ( url ) {
             NSURLRequest * request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestReturnCacheDataElseLoad timeoutInterval:5.0];
             
-            [NSURLConnection sendAsynchronousRequest:request queue:_loadQueue completionHandler:^(NSURLResponse* response, NSData* data, NSError* error){
+            [NSURLConnection sendAsynchronousRequest:request queue:_loadQueue completionHandler:^(NSURLResponse* response, NSData* data, NSError* error) {
                 if ( error ) {
                     NSLog(@"URL Error loading (%@): %@", url, error);
-                    page.image = [UIImage imageNamed:@"grid256"];
+                    //page.image = [UIImage imageNamed:@"grid256"];
                 } else {
-                    page.image = [UIImage imageWithData:data];
-                    page.image = [UIImage imageWithData:UIImageJPEGRepresentation(page.image, 1.0)];
-                    page.needsUpdate = YES;
+                    [EAGLContext setCurrentContext: self.loadingContext];
+                    
+                    // without converting the image, I get a "data preprocessing error". I have no idea why
+                    UIImage * image = [UIImage imageWithData:data];
+                    image = [UIImage imageWithData:UIImageJPEGRepresentation(image, 1.0)];
+                    
+                    // create texture
+                    GLKTextureInfo * textureInfo = nil;
+                    NSDictionary * options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:GLKTextureLoaderOriginBottomLeft];
+                    textureInfo = [GLKTextureLoader textureWithCGImage:[image CGImage] options:options error:&error];
+                    if ( error ) {
+                        NSLog(@"Error loading texture: %@", error);
+                    } else {
+                        page.geometry.texture0 = [[RATextureWrapper alloc] initWithTextureInfo:textureInfo];
+                    }
+                    
+                    glFlush();
+                    [EAGLContext setCurrentContext: nil];
                 }
             }];
         }
 #endif
     }
-
-    page.lastRequestTime = [NSDate timeIntervalSinceReferenceDate];
 }
 
 - (float)calculatePageTilt:(RAPage *)page {
@@ -245,13 +262,10 @@
     // !!! this does not work so well on large, curved pages
     // in this case, should test all four corners of the tile and take min distance
     GLKVector3 center = GLKMatrix4MultiplyAndProjectVector3( self.camera.modelViewMatrix, page.bound.center );
-    //double distance = GLKVector3Length(center);
-    double distance = -center.z;
+    double distance = GLKVector3Length(center);
+    //double distance = -center.z;  // seem like this should be more accurate, but the math clearing isn't quite right, as it favors pages near the equator
     
-    /*GLKVector3 eye = GLKMatrix4MultiplyAndProjectVector3( self.camera.modelViewMatrix, GLKVector3Make(0, 0, 0) );
-    double distance = GLKVector3Length(eye) - kRadiusEquator;*/
-    
-    // !!! this should be based upon the Camera
+    // !!! this should be based upon the Camera parameters
     double theta = GLKMathDegreesToRadians(65.0f);
     double w = 2. * distance * tan(theta/2.);
     
@@ -271,62 +285,29 @@
     return YES;
 }
 
-- (BOOL)traversePage:(RAPage *)page collectActivePages:(NSMutableSet *)activeSet {
+- (void)traversePage:(RAPage *)page collectActivePages:(NSMutableSet *)activeSet {
     NSAssert( page != nil, @"the traversed page must be valid");
-    [self preparePageForTraversal:page];
         
     // is the page facing away from the camera?
-    if ( [self calculatePageTilt:page] < -0.5f )
-        return YES;
+    if ( [self calculatePageTilt:page] < -0.5f ) return;
     
     // should we choose to display this page?
     float texelError = [self calculatePageScreenSpaceError:page];
-    if ( texelError < 3.5f ) {
+    if ( texelError < 3.f ) {
         // don't bother traversing if we are offscreen
-        if ( ! [self isPageOnscreen:page] ) return YES;
+        if ( ! [self isPageOnscreen:page] ) return;
         
         [self requestPage: page];
-
-        if ( page.isReady ) {
-            [activeSet addObject:page];
-            
-            // request the parent since it will likely be needed
-            if ( page.parent ) [self requestPage:page.parent];
-            return YES;
-        } else {
-            // try to display the immediate children
-            BOOL allChildrenReady = page.child1.isReady && page.child2.isReady && page.child3.isReady && page.child4.isReady;
-            if ( allChildrenReady ) {
-                [activeSet addObject:page.child1];
-                [activeSet addObject:page.child2];
-                [activeSet addObject:page.child3];
-                [activeSet addObject:page.child4];
-                return YES;
-            }
-        }
+        [activeSet addObject:page];
     } else {
-        // render children
-        NSMutableSet * activeSubset = [NSMutableSet new];
-        
-        // traverse children, but stop upon a page fault
-        if ( [self traversePage: page.child1 collectActivePages:activeSubset] &&
-             [self traversePage: page.child2 collectActivePages:activeSubset] &&
-             [self traversePage: page.child3 collectActivePages:activeSubset] &&
-             [self traversePage: page.child4 collectActivePages:activeSubset] )
-        {
-            [activeSet unionSet: activeSubset];
-            return YES;
-        } else {
-            // display this node as an alternate
-            if ( page.isReady ) {
-                [activeSet addObject:page];
-                return YES;
-            }
-        }
+        // traverse children
+        [self preparePageForTraversal:page];
+
+        [self traversePage: page.child1 collectActivePages:activeSet];
+        [self traversePage: page.child2 collectActivePages:activeSet];
+        [self traversePage: page.child3 collectActivePages:activeSet];
+        [self traversePage: page.child4 collectActivePages:activeSet];
     }
-    
-    // return value of NO indicates there was a page fault
-    return NO;
 }
 
 - (void)updateSceneGraph {
@@ -335,7 +316,7 @@
     
     // load default texture
     if ( _defaultTexture == nil ) {
-        UIImage * image = [UIImage imageNamed:@"clear256"];
+        UIImage * image = [UIImage imageNamed:@"grid256"];
         
         NSError * err = nil;
         NSDictionary * options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:GLKTextureLoaderOriginBottomLeft];
@@ -344,6 +325,19 @@
         
         _defaultTexture = [[RATextureWrapper alloc] initWithTextureInfo:textureInfo];
     }
+    
+#ifdef ENABLE_GRID_OVERLAY
+    if ( _overlayTexture == nil ) {
+        UIImage * image = [UIImage imageNamed:@"clear256"];
+        
+        NSError * err = nil;
+        NSDictionary * options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:GLKTextureLoaderOriginBottomLeft];
+        GLKTextureInfo * textureInfo = [GLKTextureLoader textureWithCGImage:[image CGImage] options:options error:&err];
+        if ( err ) NSLog(@"Error loading texture: %@", err);
+        
+        _overlayTexture = [[RATextureWrapper alloc] initWithTextureInfo:textureInfo];
+    }
+#endif
     
     BOOL doTraversal = ( _loadQueue.operationCount == 0 );
     
@@ -380,18 +374,12 @@
         // add new pages
         [_insertPages enumerateObjectsUsingBlock:^(RAPage * page, BOOL *stop) {
             [nodes addChild: page.geometry];
-            [page setupGL];
-        }];
-        
-        // setup all pages
-        [_activePages enumerateObjectsUsingBlock:^(RAPage * page, BOOL *stop) {
-            [page setupGL];
         }];
         
         // remove pages from scene graph
         [_removePages enumerateObjectsUsingBlock:^(RAPage *page, BOOL *stop) {
             [nodes removeChild: page.geometry];
-            [page releaseGL];
+            [page.geometry releaseGL];
             
             // delete the page data if not a root page
             if ( ! [rootPages containsObject:page] ) {

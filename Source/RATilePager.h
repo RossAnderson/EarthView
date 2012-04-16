@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <GLKit/GLKMathTypes.h>
+#import <GLKit/GLKit.h>
 
 #import "RATileDatabase.h"
 #import "RAGeographicUtils.h"
@@ -20,6 +20,7 @@
 @interface RATilePager : NSObject
 
 @property (strong) RATileDatabase * database;
+@property (strong) EAGLContext * loadingContext;
 
 @property (readonly) RAGroup * nodes;
 @property (readonly) NSSet * rootPages;

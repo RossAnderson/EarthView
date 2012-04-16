@@ -29,8 +29,6 @@
 @property (strong) RAGeometry * geometry;
 @property (strong) UIImage * image;
 
-@property (weak) NSOperation * buildOp;
-@property (assign) BOOL needsUpdate;
 @property (assign) NSTimeInterval lastRequestTime;
 
 - (RAPage *)initWithTileID:(TileID)t andParent:(RAPage *)parent;
@@ -40,8 +38,5 @@
 - (BOOL)isLeaf;
 
 - (void)setCenter:(GLKVector3)center andRadius:(double)radius;
-
-- (void)setupGL;
-- (void)releaseGL;
 
 @end

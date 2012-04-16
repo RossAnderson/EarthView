@@ -115,6 +115,9 @@
     
     manipulator.view = self.view;
     
+    // create another context to load textures into
+    pager.loadingContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:[context sharegroup]];
+    
     [self setupGL];
 }
 

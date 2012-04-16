@@ -90,9 +90,6 @@ typedef enum {
 	[view addGestureRecognizer:stopRecognizer];
 }
 
-
-// !!!! scrub all of these for legal values
-
 - (double)latitude {
     return _state.latitude;
 }

@@ -13,38 +13,40 @@
 
 // implementation based on OpenSceneGraph: CoordinateSystemNode
 
-const double ECEF_SCALE = 1e-6;
-const double WGS_84_RADIUS_EQUATOR = 6378137.0 * ECEF_SCALE;
-const double WGS_84_RADIUS_POLAR = 6356752.3142 * ECEF_SCALE;
+// use the WGS84 ellipsoid, shrunk down to improve 32-bit float performance
+const double kEcefScale = 1e-6;
+const double kRadiusEquator = 6378137.0 * kEcefScale;
+const double kRadiusPolar = 6356752.3142 * kEcefScale;
 
-const double WGS_84_FLATTENING = (WGS_84_RADIUS_EQUATOR-WGS_84_RADIUS_POLAR)/WGS_84_RADIUS_EQUATOR;
-const double WGS_84_ECCENTRICITY_SQUARED = 2*WGS_84_FLATTENING - WGS_84_FLATTENING*WGS_84_FLATTENING;
+const double kEllipsoidFlattening = (kRadiusEquator-kRadiusPolar)/kRadiusEquator;
+const double kEllipsoidEccentricitySquared = 2*kEllipsoidFlattening - kEllipsoidFlattening*kEllipsoidFlattening;
+const double kEllipsoidEccentricityPrimeSquared = ( kRadiusEquator*kRadiusEquator - kRadiusPolar*kRadiusPolar ) / ( kRadiusPolar*kRadiusPolar );
 
 // create a matrix to transform a unit sphere
-const GLKMatrix4 UNIT_SPHERE_TO_WGS_84 = {
-    WGS_84_RADIUS_EQUATOR, 0, 0, 0, 
-    0, WGS_84_RADIUS_EQUATOR, 0, 0, 
-    0, 0, WGS_84_RADIUS_POLAR, 0, 
+const GLKMatrix4 kUnitSphereToEllipsoid = {
+    kRadiusEquator, 0, 0, 0, 
+    0, kRadiusEquator, 0, 0, 
+    0, 0, kRadiusPolar, 0, 
     0, 0, 0, 1 };
-const GLKMatrix4 WGS_84_TO_UNIT_SPHERE = {
-    1./WGS_84_RADIUS_EQUATOR, 0, 0, 0, 
-    0, 1./WGS_84_RADIUS_EQUATOR, 0, 0, 
-    0, 0, 1./WGS_84_RADIUS_POLAR, 0, 
+const GLKMatrix4 kEllipsoidToUnitSphere = {
+    1./kRadiusEquator, 0, 0, 0, 
+    0, 1./kRadiusEquator, 0, 0, 
+    0, 0, 1./kRadiusPolar, 0, 
     0, 0, 0, 1 };
 
 const double DEG_TO_RAD = M_PI / 180.;
 const double RAD_TO_DEG = 180. / M_PI;
 
 double ConvertHeightToEcef( double height ) {
-    return height * ECEF_SCALE;
+    return height * kEcefScale;
 }
 
 double ConvertHeightAboveGroundToEcef( double height ) {
-    return (height + WGS_84_RADIUS_POLAR) * ECEF_SCALE;
+    return (height + kRadiusPolar) * kEcefScale;
 }
 
 double ConvertEcefToHeight( double length ) {
-    return length / ECEF_SCALE;
+    return length / kEcefScale;
 }
 
 GLKVector3 ConvertPolarToEcef( RAPolarCoordinate polar )
@@ -52,46 +54,48 @@ GLKVector3 ConvertPolarToEcef( RAPolarCoordinate polar )
     // convert to radians
     polar.latitude *= DEG_TO_RAD;
     polar.longitude *= DEG_TO_RAD;
-    polar.height *= ECEF_SCALE;
+    polar.height *= kEcefScale;
     
-    // for details on maths see http://www.colorado.edu/geography/gcraft/notes/datum/gif/llhxyz.gif
-    double sin_latitude = sin(polar.latitude);
-    double cos_latitude = cos(polar.latitude);
-    double N = WGS_84_RADIUS_EQUATOR / sqrt( 1.0 - WGS_84_ECCENTRICITY_SQUARED*sin_latitude*sin_latitude);
+    // calculate ellipsoid parameters based upon these equations:
+    // http://www.colorado.edu/geography/gcraft/notes/datum/gif/llhxyz.gif
+    
+    double sin_latitude = sin( polar.latitude );
+    double cos_latitude = cos( polar.latitude );
+    double N = kRadiusEquator / sqrt( 1.0 - kEllipsoidEccentricitySquared * sin_latitude * sin_latitude );
     
     GLKVector3 ecef;
-    ecef.x = (N+polar.height)*cos_latitude*cos(polar.longitude);
-    ecef.y = (N+polar.height)*cos_latitude*sin(polar.longitude);
-    ecef.z = (N*(1-WGS_84_ECCENTRICITY_SQUARED)+polar.height)*sin_latitude;
+    ecef.x = ( N + polar.height ) * cos_latitude * cos(polar.longitude);
+    ecef.y = ( N + polar.height ) * cos_latitude * sin(polar.longitude);
+    ecef.z = ( N * ( 1.0 - kEllipsoidEccentricitySquared ) + polar.height ) * sin_latitude;
     
     return ecef;
 }
 
 RAPolarCoordinate ConvertEcefToPolar( GLKVector3 ecef )
 {
+    // calculate ellipsoid parameters based upon these equations:
     // http://www.colorado.edu/geography/gcraft/notes/datum/gif/xyzllh.gif
-    double p = sqrt(ecef.x*ecef.x + ecef.y*ecef.y);
-    double theta = atan2(ecef.z*WGS_84_RADIUS_EQUATOR , (p*WGS_84_RADIUS_POLAR));
-    double eDashSquared = (WGS_84_RADIUS_EQUATOR*WGS_84_RADIUS_EQUATOR - WGS_84_RADIUS_POLAR*WGS_84_RADIUS_POLAR)/
-    (WGS_84_RADIUS_POLAR*WGS_84_RADIUS_POLAR);
+
+    double p = sqrt( ecef.x*ecef.x + ecef.y*ecef.y );
+    double theta = atan2( ecef.z * kRadiusEquator, p * kRadiusPolar );
     
-    double sin_theta = sin(theta);
-    double cos_theta = cos(theta);
+    double sin_theta = sin( theta );
+    double cos_theta = cos( theta );
     
     RAPolarCoordinate polar;
-    polar.latitude = atan( (ecef.z + eDashSquared*WGS_84_RADIUS_POLAR*sin_theta*sin_theta*sin_theta) /
-                    (p - WGS_84_ECCENTRICITY_SQUARED*WGS_84_RADIUS_EQUATOR*cos_theta*cos_theta*cos_theta) );
-    polar.longitude = atan2(ecef.y,ecef.x);
+    polar.latitude = atan( (ecef.z + kEllipsoidEccentricityPrimeSquared*kRadiusPolar*sin_theta*sin_theta*sin_theta) /
+                    (p - kEllipsoidEccentricitySquared*kRadiusEquator*cos_theta*cos_theta*cos_theta) );
+    polar.longitude = atan2(ecef.y, ecef.x);
     
     double sin_latitude = sin(polar.latitude);
-    double N = WGS_84_RADIUS_EQUATOR / sqrt( 1.0 - WGS_84_ECCENTRICITY_SQUARED*sin_latitude*sin_latitude);
+    double N = kRadiusEquator / sqrt( 1.0 - kEllipsoidEccentricitySquared*sin_latitude*sin_latitude);
     
-    polar.height = p/cos(polar.latitude) - N;
+    polar.height = p / cos(polar.latitude) - N;
     
     // convert to degrees
     polar.latitude *= RAD_TO_DEG;
     polar.longitude *= RAD_TO_DEG;
-    polar.height *= 1./ECEF_SCALE;
+    polar.height *= 1./kEcefScale;
     
     return polar;
 }
@@ -103,15 +107,14 @@ GLKMatrix4 CoordinateFrameForPolar( RAPolarCoordinate polar )
     polar.longitude *= DEG_TO_RAD;
     
     // Compute up vector
-    GLKVector3 up = GLKVector3Make( cos(polar.longitude)*cos(polar.latitude), sin(polar.longitude)*cos(polar.latitude), sin(polar.latitude));
+    GLKVector3 up = GLKVector3Make( cos(polar.longitude) * cos(polar.latitude), sin(polar.longitude) * cos(polar.latitude), sin(polar.latitude));
     
     // Compute east vector
-    GLKVector3 east = GLKVector3Make(-sin(polar.longitude), cos(polar.longitude), 0);
+    GLKVector3 east = GLKVector3Make( -sin(polar.longitude), cos(polar.longitude), 0 );
     
     // Compute north vector = outer product up x east
     GLKVector3 north = GLKVector3CrossProduct( up, east );
     
-
     // set transform basis
     GLKMatrix4 coordinateFrame = GLKMatrix4Identity;
 
@@ -133,8 +136,8 @@ GLKMatrix4 CoordinateFrameForPolar( RAPolarCoordinate polar )
 bool IntersectWithEllipsoid( GLKVector3 start, GLKVector3 end, GLKVector3* hit )
 {
     // transform endpoints into unit sphere basis
-    start = GLKMatrix4MultiplyAndProjectVector3(WGS_84_TO_UNIT_SPHERE, start);
-    end = GLKMatrix4MultiplyAndProjectVector3(WGS_84_TO_UNIT_SPHERE, end);
+    start = GLKMatrix4MultiplyAndProjectVector3(kEllipsoidToUnitSphere, start);
+    end = GLKMatrix4MultiplyAndProjectVector3(kEllipsoidToUnitSphere, end);
     
     // use unit sphere
     const double r = 1.;
@@ -159,7 +162,7 @@ bool IntersectWithEllipsoid( GLKVector3 start, GLKVector3 end, GLKVector3* hit )
         if ( t1 > 0.0 && t1 < 1.0 ) {
             if ( hit ) {
                 *hit = GLKVector3Add( start, GLKVector3MultiplyScalar(diff, t1));
-                *hit = GLKMatrix4MultiplyAndProjectVector3(UNIT_SPHERE_TO_WGS_84, *hit);
+                *hit = GLKMatrix4MultiplyAndProjectVector3(kUnitSphereToEllipsoid, *hit);
             }
             
             return true;
@@ -168,7 +171,7 @@ bool IntersectWithEllipsoid( GLKVector3 start, GLKVector3 end, GLKVector3* hit )
         if ( t2 > 0.0 && t2 < 1.0 ) {
             if ( hit ) {
                 *hit = GLKVector3Add( start, GLKVector3MultiplyScalar(diff, t2));
-                *hit = GLKMatrix4MultiplyAndProjectVector3(UNIT_SPHERE_TO_WGS_84, *hit);
+                *hit = GLKMatrix4MultiplyAndProjectVector3(kUnitSphereToEllipsoid, *hit);
             }
             
             return true;

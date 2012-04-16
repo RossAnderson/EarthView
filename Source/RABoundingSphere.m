@@ -68,35 +68,36 @@
 
 - (void)expandByBoundingSphere:(RABoundingSphere *)bound
 {
-    // ignore operation if incomming BoundingSphere is invalid.
+    // the following code snippet was ported from OpenSceneGraph: BoundingSphere
+    
+    // ignore operation if incoming BoundingSphere is invalid
     if ( ![bound valid] ) return;
     
-    // This sphere is not set so use the inbound sphere
+    // if the sphere is currently invalid, set to the provided sphere
     if ( ![self valid] ) {
         center = bound.center;
         radius = bound.radius;
         return;
     }
     
-    // Calculate d == The distance between the sphere centers   
+    // calculate the distance between sphere centers   
     double d = GLKVector3Distance( center, bound.center );
     
-    // New sphere is already inside this one
+    // new sphere is already entirely inside this one
     if ( d + bound.radius <= radius ) return;
     
-    //  New sphere completely contains this one 
+    //  new sphere completely contains this one
     if ( d + radius <= bound.radius ) {
         center = bound.center;
         radius = bound.radius;
         return;
     }
     
-    // Build a new sphere that completely contains the other two:
-    //
-    // The center point lies halfway along the line between the furthest
-    // points on the edges of the two spheres.
-    //
-    // Computing those two points is ugly - so we'll use similar triangles
+    // build a new sphere that completely contains the other two
+    // the center point lies halfway along the line between the furthest
+    // points on the edges of the two spheres
+    
+    // computing those two points is ugly - so we'll use similar triangles
     double new_radius = (radius + d + bound.radius ) * 0.5;
     double ratio = ( new_radius - radius ) / d ;
     
@@ -128,33 +129,32 @@
 {
     RABoundingSphere * newbounds = [RABoundingSphere new];
     
-    GLKVector3 xdash = self.center;
-    xdash.x += self.radius;
-    xdash = GLKMatrix4MultiplyAndProjectVector3( tr, xdash );
+    // this algorithm was ported from OpenSceneGraph: Transform.cpp
     
-    GLKVector3 ydash = self.center;
-    ydash.y += self.radius;
-    ydash = GLKMatrix4MultiplyAndProjectVector3( tr, ydash );
+    GLKVector3 x_prime = self.center;
+    x_prime.x += self.radius;
+    x_prime = GLKMatrix4MultiplyAndProjectVector3( tr, x_prime );
     
-    GLKVector3 zdash = self.center;
-    zdash.z += self.radius;
-    zdash = GLKMatrix4MultiplyAndProjectVector3( tr, zdash );
+    GLKVector3 y_prime = self.center;
+    y_prime.y += self.radius;
+    y_prime = GLKMatrix4MultiplyAndProjectVector3( tr, y_prime );
+    
+    GLKVector3 z_prime = self.center;
+    z_prime.z += self.radius;
+    z_prime = GLKMatrix4MultiplyAndProjectVector3( tr, z_prime );
     
     newbounds.center = GLKMatrix4MultiplyAndProjectVector3( tr, self.center );
     
-    xdash = GLKVector3Subtract( xdash, newbounds.center );
-    float len_xdash = GLKVector3Length( xdash );
+    // calculate the radius from center
+    float x_prime_radius = GLKVector3Length( GLKVector3Subtract( x_prime, newbounds.center ) );
+    float y_prime_radius = GLKVector3Length( GLKVector3Subtract( y_prime, newbounds.center ) );
+    float z_prime_radius = GLKVector3Length( GLKVector3Subtract( z_prime, newbounds.center ) );
     
-    ydash = GLKVector3Subtract( ydash, newbounds.center );
-    float len_ydash = GLKVector3Length( ydash );
-    
-    zdash = GLKVector3Subtract( zdash, newbounds.center );
-    float len_zdash = GLKVector3Length( zdash );
-    
-    newbounds.radius = len_xdash;
-    if (newbounds.radius < len_ydash) newbounds.radius = len_ydash;
-    if (newbounds.radius < len_zdash) newbounds.radius = len_zdash;
-    
+    // choose the longest radius
+    newbounds.radius = x_prime_radius;
+    if (newbounds.radius < y_prime_radius) newbounds.radius = y_prime_radius;
+    if (newbounds.radius < z_prime_radius) newbounds.radius = z_prime_radius;
+
     return newbounds;
     
 }

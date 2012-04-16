@@ -32,6 +32,5 @@ Bugs and Limitations
 - Page loading needs to be more progressive. Specifically, high res pages should be generated immediately with a lower-res texture that is replaced when the higher detail image is loaded. Currently the pager waited until all higher-res images are loaded before paging in the children.
 - The paging engine still needs a bit of work to more efficiently unload pages.
 - The sky box does not display on devices although it works in the simulator.
-- No explicit caching is done of map tiles.
-- A hole is displayed at the poles because there is no map tile content here.
-- Add support for MBTiles (http://mapbox.com/mbtiles-spec/) for locally stored/cached content
+- A hole is displayed at the poles because there is no map tile content there.
+- Add support for MBTiles (http://mapbox.com/mbtiles-spec/) for locally stored/cached content.

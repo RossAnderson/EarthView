@@ -46,6 +46,11 @@
     if (self) {
         nodes = [[RAGroup alloc] init];
         
+        // enlarge shared cache
+        NSURLCache * cache = [NSURLCache sharedURLCache];
+        [cache setMemoryCapacity: 5*1000*1000];
+        [cache setDiskCapacity: 50*1000*1000];
+        
         _buildQueue = [[NSOperationQueue alloc] init];
         [_buildQueue setName:@"Build Queue"];
         [_buildQueue setMaxConcurrentOperationCount: 1];
@@ -209,7 +214,7 @@
 #if 1   /* set this to 0 to skip page loading and display a grid instead */
         NSURL * url = [self.database urlForTile: page.tile];
         if ( url ) {
-            NSURLRequest * request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:60.0];
+            NSURLRequest * request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestReturnCacheDataElseLoad timeoutInterval:5.0];
             
             [NSURLConnection sendAsynchronousRequest:request queue:_loadQueue completionHandler:^(NSURLResponse* response, NSData* data, NSError* error){
                 if ( error ) {
@@ -244,7 +249,7 @@
     double distance = -center.z;
     
     /*GLKVector3 eye = GLKMatrix4MultiplyAndProjectVector3( self.camera.modelViewMatrix, GLKVector3Make(0, 0, 0) );
-    double distance = GLKVector3Length(eye) - WGS_84_RADIUS_EQUATOR;*/
+    double distance = GLKVector3Length(eye) - kRadiusEquator;*/
     
     // !!! this should be based upon the Camera
     double theta = GLKMathDegreesToRadians(65.0f);

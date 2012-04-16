@@ -57,7 +57,6 @@
     EAGLContext *       context;
     GLKBaseEffect *     effect;
     GLKSkyboxEffect *   skybox;
-    NSTimer *           pageTimer;
 }
 
 @property (strong, nonatomic) UIPopoverController *masterPopoverController;
@@ -116,17 +115,12 @@
     
     manipulator.view = self.view;
     
-    pageTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:self selector:@selector(requestRequestUpdate:) userInfo:nil repeats:YES];
-
     [self setupGL];
 }
 
 - (void)viewDidUnload
 {    
     [super viewDidUnload];
-    
-    [pageTimer invalidate];
-    pageTimer = nil;
     
     [self tearDownGL];
     
@@ -149,10 +143,6 @@
     } else {
         return YES;
     }
-}
-
-- (void)requestRequestUpdate:(NSTimer *)timer {
-    //[pager requestUpdate];
 }
 
 #pragma mark - Scene Graph

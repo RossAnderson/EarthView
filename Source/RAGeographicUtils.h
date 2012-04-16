@@ -13,8 +13,8 @@
 #include <GLKit/GLKVector3.h>
 #include <GLKit/GLKMatrix4.h>
 
-extern const double WGS_84_RADIUS_EQUATOR;
-extern const double WGS_84_RADIUS_POLAR;
+extern const double kRadiusEquator;
+extern const double kRadiusPolar;
 
 typedef struct {
     double latitude;    // degrees north from equator

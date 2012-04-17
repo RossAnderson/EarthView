@@ -280,19 +280,21 @@
 - (void)update
 {
     [manipulator update];
-
+    
     // position light directly above the globe
     RAPolarCoordinate lightPolar = {
         manipulator.latitude, manipulator.longitude, 1e7
     };
     GLKVector3 lightEcef = ConvertPolarToEcef( lightPolar );
     effect.light0.position = GLKVector4MakeWithVector3(lightEcef, 1.0);
-    
+
     // calculate min/max scene distance
     GLKVector3 center = GLKMatrix4MultiplyAndProjectVector3(manipulator.camera.modelViewMatrix, self.sceneRoot.bound.center);
-    float minDistance = MAX( -center.z - self.sceneRoot.bound.radius*2, 0.0001f );
-    float maxDistance = -center.z + self.sceneRoot.bound.radius*2;
-    //NSLog(@"Z Buffer: %f - %f", minDistance, maxDistance);
+    float minDistance = -center.z - self.sceneRoot.bound.radius;
+    float maxDistance = -center.z + self.sceneRoot.bound.radius;
+    //NSLog(@"Z Buffer: %f - %f, Scene Radius: %f", minDistance, maxDistance, self.sceneRoot.bound.radius);
+    if ( minDistance < 0.0001f ) minDistance = 0.0001f;
+    if ( maxDistance < 50.0f ) maxDistance = 50.0f; // room for skybox
         
     // update projection
     float aspect = fabsf(self.view.bounds.size.width / self.view.bounds.size.height);
@@ -313,10 +315,10 @@
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     // render the skybox
-    glDisable(GL_DEPTH_TEST);
+    //glDisable(GL_DEPTH_TEST);
     [skybox prepareToDraw];
     [skybox draw];
-    glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_DEPTH_TEST);
     
     // run the render visitor
     [renderVisitor clear];

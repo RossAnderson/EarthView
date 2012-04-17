@@ -38,5 +38,6 @@ The example application connects to various map tiles services over the web such
 Bugs and Limitations
 --------------------
 
+- The light position lags by 1 frame for some reason.
 - There are holes in the globe at the poles because there is no map tile content there.
 - Add support for MBTiles (http://mapbox.com/mbtiles-spec/) for locally stored/cached content.

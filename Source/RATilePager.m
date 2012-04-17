@@ -224,7 +224,7 @@
 #if 1   /* set this to 0 to skip page loading and display a grid instead */
         NSURL * url = [self.database urlForTile: page.tile];
         if ( url ) {
-            NSURLRequest * request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestReturnCacheDataElseLoad timeoutInterval:5.0];
+            NSURLRequest * request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestReturnCacheDataElseLoad timeoutInterval:15.0];
             
             [NSURLConnection sendAsynchronousRequest:request queue:_loadQueue completionHandler:^(NSURLResponse* response, NSData* data, NSError* error) {
                 if ( error ) {

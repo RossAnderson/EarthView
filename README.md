@@ -9,6 +9,8 @@ Besides fixing the bugs listed below, I am interested in adding topographical te
 
 Enjoy!
 
+![](https://github.com/RossAnderson/EarthView/raw/master/Screenshot-iphone.png)
+
 How to Use
 ----------
 

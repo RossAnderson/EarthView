@@ -33,7 +33,6 @@
     RATextureWrapper *      _overlayTexture;
 #endif
     
-    NSOperationQueue *      _buildQueue;
     NSOperationQueue *      _loadQueue;
     __weak NSOperation *    _traverseOp;
     
@@ -53,12 +52,8 @@
         // enlarge shared cache
         NSURLCache * cache = [NSURLCache sharedURLCache];
         [cache setMemoryCapacity: 5*1000*1000];
-        [cache setDiskCapacity: 50*1000*1000];
+        [cache setDiskCapacity: 250*1000*1000];
         
-        _buildQueue = [[NSOperationQueue alloc] init];
-        [_buildQueue setName:@"Build Queue"];
-        [_buildQueue setMaxConcurrentOperationCount: 1];
-
         _loadQueue = [[NSOperationQueue alloc] init];
         [_loadQueue setName:@"URL Loading Queue"];
         [_loadQueue setMaxConcurrentOperationCount: 1];
@@ -67,9 +62,6 @@
 }
 
 - (void)dealloc {
-    [_buildQueue cancelAllOperations];
-    [_buildQueue waitUntilAllOperationsAreFinished];
-
     [_loadQueue cancelAllOperations];
     [_loadQueue waitUntilAllOperationsAreFinished];
 }
@@ -101,21 +93,41 @@
 
 - (RAGeometry *)createGeometryForTile:(TileID)tile
 {
+    // create geometry node
+    RAGeometry * geom = [RAGeometry new];
+    geom.positionOffset = (0*sizeof(GLfloat));
+    geom.normalOffset = (3*sizeof(GLfloat));
+    geom.textureOffset = (6*sizeof(GLfloat));
+    
+    static GLKEffectPropertyMaterial * sPageMaterial = nil;
+    if ( sPageMaterial == nil ) {
+        sPageMaterial = [GLKEffectPropertyMaterial new];
+        sPageMaterial.ambientColor = (GLKVector4){ 0.8f, 0.8f, 0.8f, 1.0};
+        sPageMaterial.diffuseColor = (GLKVector4){ 1.0f, 1.0f, 1.0f, 1.0};
+        sPageMaterial.specularColor = (GLKVector4){ 0.0f, 0.0f, 0.0f, 1.0};
+        sPageMaterial.shininess = 0.0f;
+    }
+    geom.material = sPageMaterial;
+    
+    return geom;
+}
+
+- (void)setupPageGeometry:(RAGeometry *)geom forTile:(TileID)tile withTexForTile:(TileID)texTile {
     int gridSize = 8;
-            
+    
     RAPolarCoordinate lowerLeft = [self.database tileLatLonOrigin:tile];
     RAPolarCoordinate upperRight = [self.database tileLatLonOrigin:TileOppositeCorner(tile)];
     
     // use more precision for large tiles
     if ( upperRight.latitude - lowerLeft.latitude > 10. ||
-         upperRight.longitude - lowerLeft.longitude > 10. ) gridSize = 32;
-
+        upperRight.longitude - lowerLeft.longitude > 10. ) gridSize = 32;
+    
     double latInterval = ( upperRight.latitude - lowerLeft.latitude ) / (gridSize-1);
     double lonInterval = ( upperRight.longitude - lowerLeft.longitude ) / (gridSize-1);
     
     // fits in index value?
     NSAssert( gridSize*gridSize < 65535, @"too many grid elements" );
-    
+
     size_t vertexDataSize = 8*sizeof(GLfloat) * gridSize*gridSize;
     GLfloat * vertexData = (GLfloat *)alloca(vertexDataSize);
     
@@ -134,7 +146,7 @@
             
             GLKVector3 ecef = ConvertPolarToEcef(gpos);
             GLKVector3 normal = GLKVector3Normalize(ecef);
-            GLKVector2 tex = [self.database textureCoordsForLatLon:gpos inTile:tile];
+            GLKVector2 tex = [self.database textureCoordsForLatLon:gpos inTile:texTile];
             
             // fill vertex data
             vertexData[vertexDataPos++] = ecef.x;
@@ -162,23 +174,9 @@
     }
     NSAssert( vertexDataPos == 8*gridSize*gridSize, @"didn't fill vertex array" );
     NSAssert( indexDataPos == 6*(gridSize-1)*(gridSize-1), @"didn't fill index array" );
-            
-    // create geometry node
-    RAGeometry * geom = [RAGeometry new];
+    
     [geom setObjectData:vertexData withSize:vertexDataSize withStride:(8*sizeof(GLfloat))];
-    geom.positionOffset = (0*sizeof(GLfloat));
-    geom.normalOffset = (3*sizeof(GLfloat));
-    geom.textureOffset = (6*sizeof(GLfloat));
     [geom setIndexData:indexData withSize:indexDataSize withStride:sizeof(GLushort)];
-    
-    // set material
-    geom.material = [GLKEffectPropertyMaterial new];
-    geom.material.ambientColor = (GLKVector4){ 0.0, 0.0, 0.0, 1.0};
-    geom.material.diffuseColor = (GLKVector4){ 0.5, 0.5, 0.5, 1.0};
-    geom.material.specularColor = (GLKVector4){ 1.0, 1.0, 1.0, 1.0};
-    geom.material.shininess = 2.0f;
-    
-    return geom;
 }
 
 - (RAPage *)makeLeafPageForTile:(TileID)t withParent:(RAPage *)parent{
@@ -204,12 +202,20 @@
 
 - (void)requestPage:(RAPage *)page {
     NSAssert( page != nil, @"the requested page must be valid");
-    page.lastRequestTime = [NSDate timeIntervalSinceReferenceDate];
+    // page.lastRequestTime = [NSDate timeIntervalSinceReferenceDate]; // not currently used
 
     if ( page.geometry == nil ) {
         // generate the geometry
         page.geometry = [self createGeometryForTile:page.tile];
-        page.geometry.texture0 = _defaultTexture;
+        
+        // find a ancestor tile with a valid texture (currently limited to parent)
+        if ( page.parent.geometry.texture0 ) {
+            [self setupPageGeometry:page.geometry forTile:page.tile withTexForTile:page.parent.tile];
+            page.geometry.texture0 = page.parent.geometry.texture0;
+        } else {
+            [self setupPageGeometry:page.geometry forTile:page.tile withTexForTile:page.tile];
+            page.geometry.texture0 = _defaultTexture;
+        }
 #ifdef ENABLE_GRID_OVERLAY
         page.geometry.texture1 = _overlayTexture;
 #endif
@@ -223,7 +229,6 @@
             [NSURLConnection sendAsynchronousRequest:request queue:_loadQueue completionHandler:^(NSURLResponse* response, NSData* data, NSError* error) {
                 if ( error ) {
                     NSLog(@"URL Error loading (%@): %@", url, error);
-                    //page.image = [UIImage imageNamed:@"grid256"];
                 } else {
                     [EAGLContext setCurrentContext: self.loadingContext];
                     
@@ -238,6 +243,7 @@
                     if ( error ) {
                         NSLog(@"Error loading texture: %@", error);
                     } else {
+                        [self setupPageGeometry:page.geometry forTile:page.tile withTexForTile:page.tile];
                         page.geometry.texture0 = [[RATextureWrapper alloc] initWithTextureInfo:textureInfo];
                     }
                     
@@ -291,14 +297,20 @@
     // is the page facing away from the camera?
     if ( [self calculatePageTilt:page] < -0.5f ) return;
     
+    float texelError = 0.0f;
+    if ( page.tile.z <= self.database.maxzoom ) // force display at maximum level
+        texelError = [self calculatePageScreenSpaceError:page];
+    
     // should we choose to display this page?
-    float texelError = [self calculatePageScreenSpaceError:page];
     if ( texelError < 3.f ) {
         // don't bother traversing if we are offscreen
         if ( ! [self isPageOnscreen:page] ) return;
         
         [self requestPage: page];
         [activeSet addObject:page];
+        
+        // prune children
+        page.child1 = page.child2 = page.child3 = page.child4 = nil;
     } else {
         // traverse children
         [self preparePageForTraversal:page];
@@ -369,7 +381,7 @@
     }
         
     @synchronized(self) {
-        //NSLog(@"Active: %d, Insert: %d, Remove: %d, Build Ops: %d, Load Ops: %d", _activePages.count, _insertPages.count, _removePages.count, _buildQueue.operationCount, _loadQueue.operationCount);
+        //NSLog(@"Active: %d, Insert: %d, Remove: %d, Load Ops: %d", _activePages.count, _insertPages.count, _removePages.count, _loadQueue.operationCount);
                         
         // add new pages
         [_insertPages enumerateObjectsUsingBlock:^(RAPage * page, BOOL *stop) {
@@ -383,38 +395,9 @@
             
             // delete the page data if not a root page
             if ( ! [rootPages containsObject:page] ) {
-                page.image = nil;
                 page.geometry = nil;
             }
         }];
-        
-        // this section would replace the page deletion above, but it doesn't quite work well yet
-        /*
-        [_removePages minusSet: rootPages];
-        NSUInteger totalPages = _insertPages.count + _removePages.count + _activePages.count;
-        NSUInteger maxPages = 100;
-
-        if ( totalPages > maxPages && _removePages.count > 0 ) {
-            // remove pages that are active but no longer needed
-            NSMutableArray * removeArray = [NSMutableArray arrayWithArray:[_removePages allObjects]];
-            [removeArray sortUsingComparator:(NSComparator)^(RAPage *a, RAPage *b){
-                return a.lastRequestTime < b.lastRequestTime;
-            }];
-            // !!! check that this is the right order
-            
-            // remove as many as we need
-            if ( totalPages - _removePages.count < maxPages )
-                [removeArray removeObjectsInRange:NSMakeRange(0, totalPages - maxPages)];
-            
-            NSLog(@"Removing: %d", removeArray.count);
-            [removeArray enumerateObjectsUsingBlock:^(RAPage *page, NSUInteger idx, BOOL *stop) {
-                page.image = nil;
-                page.geometry = nil;
-                
-                if ( page.isLeaf ) [page prune];
-            }];
-        }
-        */
         
         _insertPages = nil;
         _removePages = nil;

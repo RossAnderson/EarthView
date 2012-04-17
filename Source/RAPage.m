@@ -13,7 +13,6 @@
     RAPage *            _parent;
     
     RAGeometry *        _geometry;
-    UIImage *           _image;
 
     NSURLConnection *   _connection;
     NSMutableData *     _imageData;
@@ -22,9 +21,8 @@
 @synthesize tile, key;
 @synthesize bound = _bound;
 @synthesize geometry = _geometry;
-@synthesize image = _image;
 @synthesize parent = _parent, child1, child2, child3, child4;
-@synthesize lastRequestTime;
+//@synthesize lastRequestTime;
 
 - (RAPage *)initWithTileID:(TileID)t andParent:(RAPage *)parent;
 {
@@ -38,17 +36,7 @@
 }
 
 - (void)dealloc {
-    NSLog(@"Page %@ is deallocated.", key);
     [_connection cancel];
-}
-
-- (void)prune {
-    [child1 prune]; child1 = nil;
-    [child2 prune]; child2 = nil;
-    [child3 prune]; child3 = nil;
-    [child4 prune]; child4 = nil;
-    
-    _parent = nil;
 }
 
 - (void)setCenter:(GLKVector3)center andRadius:(double)radius {
@@ -58,7 +46,7 @@
 }
 
 - (BOOL)isReady {
-    return _geometry != nil; //&& _image != nil;
+    return _geometry != nil;
 }
 
 - (BOOL)isLeaf {

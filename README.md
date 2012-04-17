@@ -9,6 +9,13 @@ Besides fixing the bugs listed below, I am interested in adding topographical te
 
 Enjoy!
 
+How to Use
+----------
+
+Move the globe around by dragging with your finger. You can flick the globe to spin it further. Zoom in and out using a pinch gesture, or by double-tapping. Tilt or rotate the globe by dragging a finger along the right or bottom edges of the screen, respectively.
+
+There is currently no way to select which map layer is displayed at runtime. See DRAppDelegate.m to select which hardcoded layer is used.
+
 About the Author
 ----------------
 
@@ -29,8 +36,6 @@ The example application connects to various map tiles services over the web such
 Bugs and Limitations
 --------------------
 
-- Page loading needs to be more progressive. Specifically, high res pages should be generated immediately with a lower-res texture that is replaced when the higher detail image is loaded. Currently the pager waited until all higher-res images are loaded before paging in the children.
-- The paging engine still needs a bit of work to more efficiently unload pages.
 - The sky box does not display on devices although it works in the simulator.
 - A hole is displayed at the poles because there is no map tile content there.
 - Add support for MBTiles (http://mapbox.com/mbtiles-spec/) for locally stored/cached content.

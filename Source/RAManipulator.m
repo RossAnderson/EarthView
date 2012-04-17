@@ -137,7 +137,7 @@ typedef enum {
 
 - (void)setDistance:(double)distance {
     NSAssert( !isnan(distance), @"distance cannot be NAN" );
-    if ( distance < 10. ) distance = 10.;
+    if ( distance < 200. ) distance = 200.;
     _state.distance = distance;
 }
 

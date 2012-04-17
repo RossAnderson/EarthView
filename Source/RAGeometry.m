@@ -8,10 +8,9 @@
 
 #import "RAGeometry.h"
 
-#import <GLKit/GLKEffects.h>
-#import <GLKit/GLKMathTypes.h>
-#import <GLKit/GLKVector3.h>
+#import <GLKit/GLKit.h>
 
+#import <OpenGLES/EAGL.h>
 #import <OpenGLES/ES2/gl.h>
 #import <OpenGLES/ES2/glext.h>
 
@@ -34,7 +33,8 @@
     NSMutableData * _indexData;
     GLint           _indexStride;
     
-    BOOL            _needsSetup;
+    BOOL            _vertexDataDirty;
+    BOOL            _indexDataDirty;
 }
 
 @synthesize positionOffset = _positionOffset;
@@ -66,7 +66,7 @@
         _color = GLKVector4Make(-1, -1, -1, -1);
         _elementStyle = GL_TRIANGLES;
         
-        _needsSetup = YES;
+        _vertexDataDirty = _indexDataDirty = YES;
     }
     return self;
 }
@@ -118,120 +118,142 @@
 {
     NSAssert( stride > 0, @"stride must be non-zero" );
     
-    _vertexData = [NSMutableData dataWithBytes:data length:length];
-    _vertexStride = stride;
+    @synchronized(self) {
+        _vertexData = [NSMutableData dataWithBytes:data length:length];
+        _vertexStride = stride;
+    }
     
     [self dirtyBound];
     
     // force re-gen of vertex buffer
-    if ( _vertexBuffer != BUFFER_INVALID ) {
-        glDeleteBuffers(1, &_vertexBuffer);
-        _vertexBuffer = BUFFER_INVALID;
-    }
+    _vertexDataDirty = YES;
 }
 
 - (void)setIndexData:(const void *)data withSize:(NSUInteger)length withStride:(NSUInteger)stride
 {
     NSAssert( stride > 0, @"stride must be non-zero" );
 
-    _indexData = [NSMutableData dataWithBytes:data length:length];
-    _indexStride = stride;
+    @synchronized(self) {
+        _indexData = [NSMutableData dataWithBytes:data length:length];
+        _indexStride = stride;
+    }
     
     [self dirtyBound];
 
     // force re-gen of index buffer
-    if ( _indexBuffer != BUFFER_INVALID ) {
-        glDeleteBuffers(1, &_indexBuffer);
-        _indexBuffer = BUFFER_INVALID;
-    }
+    _indexDataDirty = YES;
 }
 
 - (void)setupGL
 {
-    if ( _needsSetup == NO ) return;
+    NSAssert( [EAGLContext currentContext], @"must be called with an active context" );
     
-    // create vertex array if needed
-    if ( _vertexArray == BUFFER_INVALID ) {
-        glGenVertexArraysOES(1, &_vertexArray);
-    }
-    
-    glBindVertexArrayOES(_vertexArray);
-    
-    // create and setup data buffers
-    if ( _vertexBuffer == BUFFER_INVALID && _vertexData && _vertexStride > 0 ) {
-        glGenBuffers(1, &_vertexBuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
-        glBufferData(GL_ARRAY_BUFFER, [_vertexData length], [_vertexData bytes], GL_STATIC_DRAW);
-    } else {
-        glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
-    }
-    
-    if ( _indexBuffer == BUFFER_INVALID && _indexData && _indexStride > 0 ) {
-        glGenBuffers(1, &_indexBuffer);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, [_indexData length], [_indexData bytes], GL_STATIC_DRAW);
-    } else {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
-    }
-    
-    // set attribute pointers
-    if ( _positionOffset >= 0 ) {
-        glEnableVertexAttribArray(GLKVertexAttribPosition);        
-        glVertexAttribPointer(GLKVertexAttribPosition, 3, GL_FLOAT, GL_FALSE, _vertexStride, (const GLvoid *)_positionOffset);
-    }
-    
-    if ( _normalOffset >= 0 ) {
-        glEnableVertexAttribArray(GLKVertexAttribNormal);        
-        glVertexAttribPointer(GLKVertexAttribNormal, 3, GL_FLOAT, GL_FALSE, _vertexStride, (const GLvoid *)_normalOffset);
-    }
-    
-    if ( _colorOffset >= 0 ) {
-        glEnableVertexAttribArray(GLKVertexAttribColor);
-        glVertexAttribPointer(GLKVertexAttribColor, 4, GL_FLOAT, GL_FALSE, _vertexStride, (const GLvoid *)_colorOffset);
-    }
+    @synchronized(self) {
+        // remove old vertex buffers if necessary
+        if ( _vertexDataDirty && _vertexBuffer != BUFFER_INVALID ) {
+            glDeleteBuffers(1, &_vertexBuffer);
+            _vertexBuffer = BUFFER_INVALID;
+            _vertexDataDirty = NO;
+        }
+        
+        if ( _indexDataDirty && _indexBuffer != BUFFER_INVALID ) {
+            glDeleteBuffers(1, &_indexBuffer);
+            _indexBuffer = BUFFER_INVALID;
+            _indexDataDirty = NO;
+        }
 
-    if ( _textureOffset >= 0 && _texture0 ) {
-        glEnableVertexAttribArray(GLKVertexAttribTexCoord0);
-        glVertexAttribPointer(GLKVertexAttribTexCoord0, 2, GL_FLOAT, GL_FALSE, _vertexStride, (const GLvoid *)_textureOffset);
-    }
+        // create vertex array if needed
+        if ( _vertexArray == BUFFER_INVALID ) {
+            glGenVertexArraysOES(1, &_vertexArray);
+        }
+        
+        glBindVertexArrayOES(_vertexArray);
+        
+        // create and setup data buffers
+        if ( _vertexBuffer == BUFFER_INVALID && _vertexData && _vertexStride > 0 ) {
+            glGenBuffers(1, &_vertexBuffer);
+            glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
+            glBufferData(GL_ARRAY_BUFFER, [_vertexData length], [_vertexData bytes], GL_STATIC_DRAW);
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
+        }
+        
+        if ( _indexBuffer == BUFFER_INVALID && _indexData && _indexStride > 0 ) {
+            glGenBuffers(1, &_indexBuffer);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, [_indexData length], [_indexData bytes], GL_STATIC_DRAW);
+        } else {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
+        }
+        
+        // set attribute pointers
+        if ( _positionOffset >= 0 ) {
+            glEnableVertexAttribArray(GLKVertexAttribPosition);        
+            glVertexAttribPointer(GLKVertexAttribPosition, 3, GL_FLOAT, GL_FALSE, _vertexStride, (const GLvoid *)_positionOffset);
+        }
+        
+        if ( _normalOffset >= 0 ) {
+            glEnableVertexAttribArray(GLKVertexAttribNormal);        
+            glVertexAttribPointer(GLKVertexAttribNormal, 3, GL_FLOAT, GL_FALSE, _vertexStride, (const GLvoid *)_normalOffset);
+        }
+        
+        if ( _colorOffset >= 0 ) {
+            glEnableVertexAttribArray(GLKVertexAttribColor);
+            glVertexAttribPointer(GLKVertexAttribColor, 4, GL_FLOAT, GL_FALSE, _vertexStride, (const GLvoid *)_colorOffset);
+        }
 
-    if ( _textureOffset >= 0 && _texture1 ) {
-        glEnableVertexAttribArray(GLKVertexAttribTexCoord1);
-        glVertexAttribPointer(GLKVertexAttribTexCoord1, 2, GL_FLOAT, GL_FALSE, _vertexStride, (const GLvoid *)_textureOffset);
-    }
+        if ( _textureOffset >= 0 && _texture0 ) {
+            glEnableVertexAttribArray(GLKVertexAttribTexCoord0);
+            glVertexAttribPointer(GLKVertexAttribTexCoord0, 2, GL_FLOAT, GL_FALSE, _vertexStride, (const GLvoid *)_textureOffset);
+        }
 
-    glBindVertexArrayOES(0);
+        if ( _textureOffset >= 0 && _texture1 ) {
+            glEnableVertexAttribArray(GLKVertexAttribTexCoord1);
+            glVertexAttribPointer(GLKVertexAttribTexCoord1, 2, GL_FLOAT, GL_FALSE, _vertexStride, (const GLvoid *)_textureOffset);
+        }
+
+        glBindVertexArrayOES(0);
+    }
 }
 
 - (void)releaseGL
 {
-    if ( _vertexBuffer != BUFFER_INVALID ) glDeleteBuffers(1, &_vertexBuffer);
-    if ( _indexBuffer != BUFFER_INVALID ) glDeleteBuffers(1, &_indexBuffer);
-    if ( _vertexArray != BUFFER_INVALID ) glDeleteVertexArraysOES(1, &_vertexArray);
+    NSAssert( [EAGLContext currentContext], @"must be called with an active context" );
+
+    @synchronized(self) {
+        if ( _vertexBuffer != BUFFER_INVALID ) glDeleteBuffers(1, &_vertexBuffer);
+        if ( _indexBuffer != BUFFER_INVALID ) glDeleteBuffers(1, &_indexBuffer);
+        if ( _vertexArray != BUFFER_INVALID ) glDeleteVertexArraysOES(1, &_vertexArray);
+        
+        _vertexBuffer = BUFFER_INVALID;
+        _indexBuffer = BUFFER_INVALID;
+        _vertexArray = BUFFER_INVALID;
+    }
     
-    _vertexBuffer = BUFFER_INVALID;
-    _indexBuffer = BUFFER_INVALID;
-    _vertexArray = BUFFER_INVALID;
-    
-    _needsSetup = YES;
+    _vertexDataDirty = _indexDataDirty = YES;
 }
 
 - (void)renderGL
 {
-    [self setupGL];
+    NSAssert( [EAGLContext currentContext], @"must be called with an active context" );
     
-    glBindVertexArrayOES(_vertexArray);
+    if ( _vertexDataDirty || _indexDataDirty )
+        [self setupGL];
     
-    if ( _indexStride > 0 && [_indexData length] > 0 ) {
-        GLenum type = -1;
-        switch( _indexStride ) {
-            case 1: type = GL_UNSIGNED_BYTE; break;
-            case 2: type = GL_UNSIGNED_SHORT; break;
-        }
+    @synchronized(self) {
+        glBindVertexArrayOES(_vertexArray);
+        
+        if ( _indexStride > 0 && [_indexData length] > 0 ) {
+            GLenum type = -1;
+            switch( _indexStride ) {
+                case 1: type = GL_UNSIGNED_BYTE; break;
+                case 2: type = GL_UNSIGNED_SHORT; break;
+            }
 
-        glDrawElements(self.elementStyle, [_indexData length]/_indexStride, type, 0);
-    } else {
-        NSLog(@"Nothing to draw in %@", self);
+            glDrawElements(self.elementStyle, [_indexData length]/_indexStride, type, 0);
+        } else {
+            NSLog(@"Nothing to draw in %@", self);
+        }
     }
 }
 

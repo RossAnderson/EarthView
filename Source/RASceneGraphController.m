@@ -281,6 +281,13 @@
 {
     [manipulator update];
 
+    // position light directly above the globe
+    RAPolarCoordinate lightPolar = {
+        manipulator.latitude, manipulator.longitude, 1e7
+    };
+    GLKVector3 lightEcef = ConvertPolarToEcef( lightPolar );
+    effect.light0.position = GLKVector4MakeWithVector3(lightEcef, 1.0);
+    
     // calculate min/max scene distance
     GLKVector3 center = GLKMatrix4MultiplyAndProjectVector3(manipulator.camera.modelViewMatrix, self.sceneRoot.bound.center);
     float minDistance = MAX( -center.z - self.sceneRoot.bound.radius*2, 0.0001f );

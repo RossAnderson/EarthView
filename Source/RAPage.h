@@ -19,6 +19,7 @@
 @property (readonly, nonatomic) TileID tile;
 @property (readonly, nonatomic) NSString * key;
 @property (readonly, nonatomic) RABoundingSphere * bound;
+//@property (assign, nonatomic) NSTimeInterval lastRequestTime;
 
 @property (readonly, nonatomic) RAPage * parent;
 @property (strong, nonatomic) RAPage * child1;
@@ -27,12 +28,8 @@
 @property (strong, nonatomic) RAPage * child4;
 
 @property (strong) RAGeometry * geometry;
-@property (strong) UIImage * image;
-
-@property (assign) NSTimeInterval lastRequestTime;
 
 - (RAPage *)initWithTileID:(TileID)t andParent:(RAPage *)parent;
-- (void)prune;
 
 - (BOOL)isReady;
 - (BOOL)isLeaf;

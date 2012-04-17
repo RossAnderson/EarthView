@@ -36,6 +36,5 @@ The example application connects to various map tiles services over the web such
 Bugs and Limitations
 --------------------
 
-- The sky box does not display on devices although it works in the simulator.
-- A hole is displayed at the poles because there is no map tile content there.
+- There are holes in the globe at the poles because there is no map tile content there.
 - Add support for MBTiles (http://mapbox.com/mbtiles-spec/) for locally stored/cached content.

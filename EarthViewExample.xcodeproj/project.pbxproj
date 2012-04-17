@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9109E03C153D86100008286D /* star1.png in Resources */ = {isa = PBXBuildFile; fileRef = 9109E03B153D86100008286D /* star1.png */; };
+		9109E03E153D864F0008286D /* RASceneGraphController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9109E03D153D864F0008286D /* RASceneGraphController.m */; };
 		91BBDFB2153A49A900CEF4BA /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 91BBDFB1153A49A900CEF4BA /* README.md */; };
 		91F77E271539335000F8AE05 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91F77E261539335000F8AE05 /* UIKit.framework */; };
 		91F77E291539335000F8AE05 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91F77E281539335000F8AE05 /* Foundation.framework */; };
@@ -18,7 +20,6 @@
 		91F77E481539335100F8AE05 /* SceneView_iPad.xib in Resources */ = {isa = PBXBuildFile; fileRef = 91F77E461539335100F8AE05 /* SceneView_iPad.xib */; };
 		91F77E891539342A00F8AE05 /* clear256.png in Resources */ = {isa = PBXBuildFile; fileRef = 91F77E851539342A00F8AE05 /* clear256.png */; };
 		91F77E8B1539342A00F8AE05 /* grid256.png in Resources */ = {isa = PBXBuildFile; fileRef = 91F77E871539342A00F8AE05 /* grid256.png */; };
-		91F77E8C1539342A00F8AE05 /* star1.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 91F77E881539342A00F8AE05 /* star1.jpg */; };
 		91F77E951539C31E00F8AE05 /* DRAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E3A1539335100F8AE05 /* DRAppDelegate.m */; };
 		91F77E961539C31E00F8AE05 /* RABoundingSphere.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E551539341B00F8AE05 /* RABoundingSphere.m */; };
 		91F77E971539C31E00F8AE05 /* RACamera.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E571539341B00F8AE05 /* RACamera.m */; };
@@ -30,7 +31,6 @@
 		91F77E9D1539C32D00F8AE05 /* RANodeVisitor.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E631539341B00F8AE05 /* RANodeVisitor.m */; };
 		91F77E9E1539C32D00F8AE05 /* RAPage.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E651539341B00F8AE05 /* RAPage.m */; };
 		91F77E9F1539C32D00F8AE05 /* RARenderVisitor.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E671539341B00F8AE05 /* RARenderVisitor.m */; };
-		91F77EA01539C32D00F8AE05 /* RASceneGraphController.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E691539341B00F8AE05 /* RASceneGraphController.m */; };
 		91F77EA11539C32D00F8AE05 /* RATextureWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E6B1539341B00F8AE05 /* RATextureWrapper.m */; };
 		91F77EA21539C32D00F8AE05 /* RATileDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E6D1539341B00F8AE05 /* RATileDatabase.m */; };
 		91F77EA31539C32D00F8AE05 /* RATilePager.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E6F1539341B00F8AE05 /* RATilePager.m */; };
@@ -42,6 +42,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		9109E03B153D86100008286D /* star1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = star1.png; sourceTree = "<group>"; };
+		9109E03D153D864F0008286D /* RASceneGraphController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RASceneGraphController.m; sourceTree = "<group>"; };
 		91BBDFB1153A49A900CEF4BA /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = SOURCE_ROOT; };
 		91F77E221539335000F8AE05 /* EarthViewExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EarthViewExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		91F77E261539335000F8AE05 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
@@ -77,7 +79,6 @@
 		91F77E661539341B00F8AE05 /* RARenderVisitor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RARenderVisitor.h; sourceTree = "<group>"; };
 		91F77E671539341B00F8AE05 /* RARenderVisitor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RARenderVisitor.m; sourceTree = "<group>"; };
 		91F77E681539341B00F8AE05 /* RASceneGraphController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RASceneGraphController.h; sourceTree = "<group>"; };
-		91F77E691539341B00F8AE05 /* RASceneGraphController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RASceneGraphController.m; sourceTree = "<group>"; };
 		91F77E6A1539341B00F8AE05 /* RATextureWrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RATextureWrapper.h; sourceTree = "<group>"; };
 		91F77E6B1539341B00F8AE05 /* RATextureWrapper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RATextureWrapper.m; sourceTree = "<group>"; };
 		91F77E6C1539341B00F8AE05 /* RATileDatabase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RATileDatabase.h; sourceTree = "<group>"; };
@@ -90,7 +91,6 @@
 		91F77E731539341B00F8AE05 /* TPPropertyAnimation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TPPropertyAnimation.m; sourceTree = "<group>"; };
 		91F77E851539342A00F8AE05 /* clear256.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = clear256.png; sourceTree = "<group>"; };
 		91F77E871539342A00F8AE05 /* grid256.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = grid256.png; sourceTree = "<group>"; };
-		91F77E881539342A00F8AE05 /* star1.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = star1.jpg; sourceTree = "<group>"; };
 		91F77E8D1539349900F8AE05 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = SOURCE_ROOT; };
 		91F77EA6153A089A00F8AE05 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		91F77EAB153A0F9A00F8AE05 /* LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE.txt; sourceTree = SOURCE_ROOT; };
@@ -194,7 +194,7 @@
 				91F77E661539341B00F8AE05 /* RARenderVisitor.h */,
 				91F77E671539341B00F8AE05 /* RARenderVisitor.m */,
 				91F77E681539341B00F8AE05 /* RASceneGraphController.h */,
-				91F77E691539341B00F8AE05 /* RASceneGraphController.m */,
+				9109E03D153D864F0008286D /* RASceneGraphController.m */,
 				91F77E6A1539341B00F8AE05 /* RATextureWrapper.h */,
 				91F77E6B1539341B00F8AE05 /* RATextureWrapper.m */,
 				91F77E6C1539341B00F8AE05 /* RATileDatabase.h */,
@@ -214,7 +214,7 @@
 			children = (
 				91F77E851539342A00F8AE05 /* clear256.png */,
 				91F77E871539342A00F8AE05 /* grid256.png */,
-				91F77E881539342A00F8AE05 /* star1.jpg */,
+				9109E03B153D86100008286D /* star1.png */,
 			);
 			path = Images;
 			sourceTree = SOURCE_ROOT;
@@ -276,9 +276,9 @@
 				91F77E481539335100F8AE05 /* SceneView_iPad.xib in Resources */,
 				91F77E891539342A00F8AE05 /* clear256.png in Resources */,
 				91F77E8B1539342A00F8AE05 /* grid256.png in Resources */,
-				91F77E8C1539342A00F8AE05 /* star1.jpg in Resources */,
 				91F77EAC153A0F9B00F8AE05 /* LICENSE.txt in Resources */,
 				91BBDFB2153A49A900CEF4BA /* README.md in Resources */,
+				9109E03C153D86100008286D /* star1.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -297,7 +297,6 @@
 				91F77E9D1539C32D00F8AE05 /* RANodeVisitor.m in Sources */,
 				91F77E9E1539C32D00F8AE05 /* RAPage.m in Sources */,
 				91F77E9F1539C32D00F8AE05 /* RARenderVisitor.m in Sources */,
-				91F77EA01539C32D00F8AE05 /* RASceneGraphController.m in Sources */,
 				91F77EA11539C32D00F8AE05 /* RATextureWrapper.m in Sources */,
 				91F77EA21539C32D00F8AE05 /* RATileDatabase.m in Sources */,
 				91F77EA31539C32D00F8AE05 /* RATilePager.m in Sources */,
@@ -307,6 +306,7 @@
 				91F77E961539C31E00F8AE05 /* RABoundingSphere.m in Sources */,
 				91F77E971539C31E00F8AE05 /* RACamera.m in Sources */,
 				91F77E981539C31E00F8AE05 /* RAGeographicUtils.c in Sources */,
+				9109E03E153D864F0008286D /* RASceneGraphController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

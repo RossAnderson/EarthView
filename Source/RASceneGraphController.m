@@ -242,7 +242,7 @@
     effect.light0.enabled = GL_TRUE;
     
     // setup skybox
-    NSString * starPath = [[NSBundle mainBundle] pathForResource:@"star1" ofType:@"jpg"];
+    NSString * starPath = [[NSBundle mainBundle] pathForResource:@"star1" ofType:@"png"];
     NSArray * starPaths = [NSArray arrayWithObjects: starPath, starPath, starPath, starPath, starPath, starPath, nil];
     NSError * error = nil;
     NSDictionary *options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] 
@@ -317,7 +317,6 @@
     [skybox prepareToDraw];
     [skybox draw];
     glEnable(GL_DEPTH_TEST);
-    glClear(GL_DEPTH_BUFFER_BIT);
     
     // run the render visitor
     [renderVisitor clear];

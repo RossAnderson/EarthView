@@ -10,6 +10,7 @@
 
 #import "TPPropertyAnimation.h"
 
+//#define ENABLE_DEBUG_GESTURES
 
 static const RAPolarCoordinate kFreshPondCoord = { 42.384733, -71.149392, 1e7 };
 static const RAPolarCoordinate kPolarNone = { -1, -1, -1 };
@@ -88,6 +89,13 @@ typedef enum {
 	[stopRecognizer setNumberOfTapsRequired:1];
 	[stopRecognizer setDelegate:self];
 	[view addGestureRecognizer:stopRecognizer];
+    
+#ifdef ENABLE_DEBUG_GESTURES
+	UITapGestureRecognizer * worldTourRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(debugWorldTour:)];
+	[worldTourRecognizer setNumberOfTapsRequired:4];
+	[worldTourRecognizer setDelegate:self];
+	[view addGestureRecognizer:worldTourRecognizer];
+#endif
 }
 
 - (double)latitude {
@@ -152,15 +160,15 @@ typedef enum {
 */
 
 - (GLKMatrix4)modelViewMatrixForState:(CameraState)aState {
-    RAPolarCoordinate   surfaceCoord = { _state.latitude, _state.longitude, 0 };
+    RAPolarCoordinate   surfaceCoord = { self.latitude, self.longitude, 0 };
     GLKVector3          surfacePos = ConvertPolarToEcef(surfaceCoord);
     
     GLKMatrix4 surfaceTransform = GLKMatrix4MakeLookAt(surfacePos.x, surfacePos.y, surfacePos.z, 0, 0, 0, 0, 0, 1);
     
     GLKMatrix4 perspective = GLKMatrix4Identity;
-    perspective = GLKMatrix4Translate(perspective, 0, 0, ConvertHeightToEcef(-_state.distance));
-    perspective = GLKMatrix4Rotate(perspective,  (90.-_state.elevation) * (M_PI/180.), -1, 0, 0);
-    perspective = GLKMatrix4Rotate(perspective, _state.azimuth * (M_PI/180.), 0, 0, 1);
+    perspective = GLKMatrix4Translate(perspective, 0, 0, ConvertHeightToEcef(-self.distance));
+    perspective = GLKMatrix4Rotate(perspective,  (90.-self.elevation) * (M_PI/180.), -1, 0, 0);
+    perspective = GLKMatrix4Rotate(perspective, self.azimuth * (M_PI/180.), 0, 0, 1);
     
     GLKMatrix4 modelView = GLKMatrix4Multiply(perspective, surfaceTransform);
     //NSLog(@"ModelView: %@", [self stringFromMatrix:renderVisitor.projectionMatrix], [self stringFromMatrix:modelView]);
@@ -193,9 +201,8 @@ typedef enum {
     return NO;
 }
 
-- (void)update {
+- (void)updateCamera {
     _camera.modelViewMatrix = [self modelViewMatrixForState:_state];
-    _camera.modelViewProjectionMatrix = GLKMatrix4Multiply(_camera.projectionMatrix, _camera.modelViewMatrix);
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
@@ -448,6 +455,18 @@ typedef enum {
     [anim beginWithTarget:self];
     
     //NSLog(@"Zoom from %@ to %@", anim.fromValue, anim.toValue);
+}
+
+- (void)debugWorldTour:(id)sender {
+    // rotate slowly along line of constant latitude
+    double duration = 12.*3600.;    // around the world in twelve short hours
+    
+    TPPropertyAnimation *anim = [TPPropertyAnimation propertyAnimationWithKeyPath:@"longitude"];
+    anim.duration = duration;
+    anim.fromValue = [NSNumber numberWithDouble:_state.longitude];
+    anim.toValue = [NSNumber numberWithDouble:_state.longitude+360];
+    anim.timing = TPPropertyAnimationTimingLinear;
+    [anim beginWithTarget:self];
 }
 
 @end

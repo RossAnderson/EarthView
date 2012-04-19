@@ -14,7 +14,6 @@
 
 @property (assign) GLKMatrix4 modelViewMatrix;
 @property (assign) GLKMatrix4 projectionMatrix;
-@property (assign) GLKMatrix4 modelViewProjectionMatrix;
 @property (assign) CGRect viewport;
 
 @end

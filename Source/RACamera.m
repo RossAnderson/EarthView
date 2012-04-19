@@ -10,6 +10,6 @@
 
 @implementation RACamera
 
-@synthesize modelViewMatrix, projectionMatrix, modelViewProjectionMatrix, viewport;
+@synthesize modelViewMatrix, projectionMatrix, viewport;
 
 @end

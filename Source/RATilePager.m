@@ -208,14 +208,26 @@
         // generate the geometry
         page.geometry = [self createGeometryForTile:page.tile];
         
-        // find a ancestor tile with a valid texture (currently limited to parent)
-        if ( page.parent.geometry.texture0 ) {
-            [self setupPageGeometry:page.geometry forTile:page.tile withTexForTile:page.parent.tile];
-            page.geometry.texture0 = page.parent.geometry.texture0;
+        // find an ancestor tile with a valid texture
+        RAPage * ancestor = page;
+        while( ancestor ) {
+            // texture valid? use this page
+            if ( ancestor.geometry.texture0 && ancestor.geometry.texture0 != _defaultTexture )
+                break;
+            
+            ancestor = ancestor.parent;
+        }
+        
+        if ( ancestor ) {
+            // recycle texture with appropriate tex coords
+            [self setupPageGeometry:page.geometry forTile:page.tile withTexForTile:ancestor.tile];
+            page.geometry.texture0 = ancestor.geometry.texture0;
         } else {
+            // show grid if necessary
             [self setupPageGeometry:page.geometry forTile:page.tile withTexForTile:page.tile];
             page.geometry.texture0 = _defaultTexture;
         }
+        
 #ifdef ENABLE_GRID_OVERLAY
         page.geometry.texture1 = _overlayTexture;
 #endif

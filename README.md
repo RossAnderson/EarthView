@@ -21,7 +21,7 @@ There is currently no way to select which map layer is displayed at runtime. See
 About the Author
 ----------------
 
-I build advanced airborne 3D imagers at my day job, which leaves me with the creative itch to build something a bit more tactile in my free time. Feel free to contact me at my e-mail (ross.w.anderson@gmail.com) if you have questions, comments, or an interesting business opportunity.
+I build advanced airborne 3D imagers at my day job, which leaves me with the creative itch to build something a bit more tactile in my free time. Feel free to contact me at my e-mail (ross.w.anderson@gmail.com) if you have questions, comments, or an interesting business opportunity. Let me know if you use EarthView in your app!
 
 License
 -------
@@ -33,11 +33,12 @@ Requirements and Dependancies
 
 This project has no dependencies beyond the iOS 5 SDK. It has been tested to work correctly on an iPad (3rd generation) and iPhone 4.
 
-The example application connects to various map tiles services over the web such as MapBox and OpenSteetMap as defined in DRAppDelegate.m. There is no local data stored with the application, so an Internet connection on your device is required.
+The example application connects to various map tile services over the web such as MapBox or OpenSteetMap as defined in DRAppDelegate.m. There is no local data stored with the application, so an Internet connection on your device is required.
 
 Bugs and Limitations
 --------------------
 
 - The light position lags by 1 frame for some reason.
 - There are holes in the globe at the poles because there is no map tile content there.
+- The tilt control should bounce when you hit the hard stops.
 - Add support for MBTiles (http://mapbox.com/mbtiles-spec/) for locally stored/cached content.

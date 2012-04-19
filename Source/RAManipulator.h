@@ -26,6 +26,6 @@
 @property (assign) double elevation;
 @property (assign) double distance;
 
-- (void)update;
+- (void)updateCamera;
 
 @end

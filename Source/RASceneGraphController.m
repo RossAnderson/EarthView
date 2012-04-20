@@ -86,7 +86,7 @@
         database.googleTileConvention = YES;
         
         // OpenStreetMap default tiles
-        database.baseUrlString = @"http://c.tile.openstreetmap.org/{z}/{x}/{y}.png";
+        database.baseUrlStrings = [NSArray arrayWithObject: @"http://a.tile.openstreetmap.org/{z}/{x}/{y}.png"];
         database.minzoom = 2;
         database.maxzoom = 18;
         

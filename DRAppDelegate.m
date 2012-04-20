@@ -33,22 +33,42 @@
     switch( SAMPLE_DATASET ) {
         case 1:
             // Sample database from: http://a.tiles.mapbox.com/v3/mapbox.blue-marble-topo-jul-bw.jsonp
-            database.baseUrlString = @"http://a.tiles.mapbox.com/v3/mapbox.blue-marble-topo-jul-bw/{z}/{x}/{y}.png";
+            database.baseUrlStrings = [NSArray arrayWithObjects:
+                @"http://a.tiles.mapbox.com/v3/mapbox.blue-marble-topo-jul-bw/{z}/{x}/{y}.png",
+                @"http://b.tiles.mapbox.com/v3/mapbox.blue-marble-topo-jul-bw/{z}/{x}/{y}.png",
+                @"http://c.tiles.mapbox.com/v3/mapbox.blue-marble-topo-jul-bw/{z}/{x}/{y}.png",
+                @"http://d.tiles.mapbox.com/v3/mapbox.blue-marble-topo-jul-bw/{z}/{x}/{y}.png",
+                nil];
+            
             database.maxzoom = 8;
             break;
         case 2:
             // Sample database from: http://a.tiles.mapbox.com/v3/mapbox.blue-marble-topo-bathy-jul.jsonp
-            database.baseUrlString = @"http://a.tiles.mapbox.com/v3/mapbox.blue-marble-topo-bathy-jul/{z}/{x}/{y}.png";
+            database.baseUrlStrings = [NSArray arrayWithObjects:
+               @"http://a.tiles.mapbox.com/v3/mapbox.blue-marble-topo-bathy-jul/{z}/{x}/{y}.png",
+               @"http://b.tiles.mapbox.com/v3/mapbox.blue-marble-topo-bathy-jul/{z}/{x}/{y}.png",
+               @"http://c.tiles.mapbox.com/v3/mapbox.blue-marble-topo-bathy-jul/{z}/{x}/{y}.png",
+               @"http://d.tiles.mapbox.com/v3/mapbox.blue-marble-topo-bathy-jul/{z}/{x}/{y}.png",
+               nil];
             database.maxzoom = 8;
             break;
         case 3:
             // OpenStreetMap
-            database.baseUrlString = @"http://c.tile.openstreetmap.org/{z}/{x}/{y}.png";
+            database.baseUrlStrings = [NSArray arrayWithObjects:
+               @"http://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+               @"http://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+               @"http://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
+               nil];
             database.maxzoom = 18;
             break;
         case 4:
-            // MapBox Streets
-            database.baseUrlString = @"http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png";
+            // MapBox Streets: http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets.jsonp
+            database.baseUrlStrings = [NSArray arrayWithObjects:
+               @"http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
+               @"http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
+               @"http://c.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
+               @"http://d.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
+               nil];
             database.maxzoom = 17;
             break;
         /*

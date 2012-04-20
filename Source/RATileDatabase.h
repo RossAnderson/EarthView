@@ -24,10 +24,11 @@ TileID TileOppositeCorner( TileID t );
 // Useful information:
 // http://www.maptiler.org/google-maps-coordinates-tile-bounds-projection/
 
+// a base url string is picked at random for each tile
 // the base url should contain the replacement tokens {x} {y} {z} for the tile
 
 @property (assign, nonatomic) CGRect bounds;
-@property (strong, nonatomic) NSString * baseUrlString;
+@property (strong, nonatomic) NSArray * baseUrlStrings;
 @property (assign, nonatomic) NSUInteger minzoom;
 @property (assign, nonatomic) NSUInteger maxzoom;
 @property (assign, nonatomic) BOOL googleTileConvention;

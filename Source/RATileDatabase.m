@@ -22,7 +22,7 @@ TileID TileOppositeCorner( TileID t ) {
 @implementation RATileDatabase
 
 @synthesize bounds;
-@synthesize baseUrlString;
+@synthesize baseUrlStrings;
 @synthesize minzoom;
 @synthesize maxzoom;
 @synthesize googleTileConvention;
@@ -101,7 +101,10 @@ TileID TileOppositeCorner( TileID t ) {
     
     // !!! check in bounds
     
-    NSMutableString * urlString = [self.baseUrlString mutableCopy];
+    // pick base string at random
+    NSUInteger urlIndex = rand() % baseUrlStrings.count;
+    NSMutableString * urlString = [[self.baseUrlStrings objectAtIndex:urlIndex] mutableCopy];
+    
     [urlString replaceOccurrencesOfString:@"{x}" withString:[NSString stringWithFormat:@"%d", tile.x] options:NSCaseInsensitiveSearch range:NSMakeRange(0, [urlString length])];
     [urlString replaceOccurrencesOfString:@"{y}" withString:[NSString stringWithFormat:@"%d", tile.y] options:NSCaseInsensitiveSearch range:NSMakeRange(0, [urlString length])];
     [urlString replaceOccurrencesOfString:@"{z}" withString:[NSString stringWithFormat:@"%d", tile.z] options:NSCaseInsensitiveSearch range:NSMakeRange(0, [urlString length])];

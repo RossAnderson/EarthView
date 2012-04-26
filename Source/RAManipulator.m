@@ -62,11 +62,11 @@ typedef enum {
 - (void)setView:(UIView *)view {
     _view = view;
     
-    _state.latitude = kFreshPondCoord.latitude;
-    _state.longitude = kFreshPondCoord.longitude;
-    _state.distance = kFreshPondCoord.height;
-    _state.azimuth = 0;
-    _state.elevation = 90;
+    self.latitude = kFreshPondCoord.latitude;
+    self.longitude = kFreshPondCoord.longitude;
+    self.distance = kFreshPondCoord.height;
+    self.azimuth = 0;
+    self.elevation = 90;
     
     // add gestures
     UIPinchGestureRecognizer * pinchRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(scale:)];

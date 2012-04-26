@@ -252,7 +252,7 @@
                     // create texture
                     GLKTextureInfo * textureInfo = nil;
                     NSDictionary * options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:GLKTextureLoaderOriginBottomLeft];
-                    textureInfo = [GLKTextureLoader textureWithCGImage:[image CGImage] options:options error:&error];
+                    textureInfo = [GLKTextureLoader textureWithCGImage:image.CGImage options:options error:&error];
                     if ( error ) {
                         NSLog(@"Error loading texture: %@", error);
                     } else {

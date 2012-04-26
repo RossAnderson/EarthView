@@ -59,8 +59,6 @@
     GLKSkyboxEffect *   skybox;
 }
 
-@property (strong, nonatomic) UIPopoverController *masterPopoverController;
-
 - (void)setupGL;
 - (void)tearDownGL;
 
@@ -69,17 +67,22 @@
 @implementation RASceneGraphController
 
 @synthesize sceneRoot = _sceneRoot;
-@synthesize masterPopoverController = _masterPopoverController;
+@synthesize camera = _camera;
 @synthesize database = database;
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
-        manipulator = [RAManipulator new];
+        _camera = [RACamera new];
+        _camera.projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(65.0f), 1, 1, 100);
+        _camera.modelViewMatrix = GLKMatrix4Identity;
         
+        manipulator = [RAManipulator new];
+        manipulator.camera = self.camera;
+
         renderVisitor = [RARenderVisitor new];
-        renderVisitor.camera = manipulator.camera;
+        renderVisitor.camera = self.camera;
 
         database = [RATileDatabase new];
         database.bounds = CGRectMake( -180,-90,360,180 );
@@ -93,7 +96,7 @@
         // setup the database pager
         pager = [RATilePager new];
         pager.database = database;
-        pager.camera = manipulator.camera;
+        pager.camera = self.camera;
 }
     return self;
 }
@@ -279,7 +282,7 @@
 
 - (void)update
 {
-    [manipulator updateCamera];
+    self.camera.modelViewMatrix = [manipulator modelViewMatrix];
 
     // position light directly above the globe
     RAPolarCoordinate lightPolar = {
@@ -288,30 +291,32 @@
     GLKVector3 lightEcef = ConvertPolarToEcef( lightPolar );
     effect.light0.position = GLKVector4MakeWithVector3(lightEcef, 1.0);
     
+    // !!! the scene view bound is incorrect
+    
     // calculate min/max scene distance
-    GLKVector3 center = GLKMatrix4MultiplyAndProjectVector3(manipulator.camera.modelViewMatrix, self.sceneRoot.bound.center);
+    GLKVector3 center = GLKMatrix4MultiplyAndProjectVector3(self.camera.modelViewMatrix, self.sceneRoot.bound.center);
     float minDistance = -center.z - self.sceneRoot.bound.radius;
     float maxDistance = -center.z + self.sceneRoot.bound.radius;
     //NSLog(@"Z Buffer: %f - %f, Scene Radius: %f", minDistance, maxDistance, self.sceneRoot.bound.radius);
     if ( minDistance < 0.0001f ) minDistance = 0.0001f;
     if ( maxDistance < 50.0f ) maxDistance = 50.0f; // room for skybox
-        
+    
     // update projection
     float aspect = fabsf(self.view.bounds.size.width / self.view.bounds.size.height);
     GLKMatrix4 projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(65.0f), aspect, minDistance, maxDistance);
     
-    manipulator.camera.projectionMatrix = projectionMatrix;
-    manipulator.camera.viewport = self.view.bounds;
+    self.camera.projectionMatrix = projectionMatrix;
+    self.camera.viewport = self.view.bounds;
     
     skybox.transform.projectionMatrix = projectionMatrix;
-    skybox.transform.modelviewMatrix = manipulator.camera.modelViewMatrix;
-        
+    skybox.transform.modelviewMatrix = self.camera.modelViewMatrix;
+
     [pager updateSceneGraph];
 }
 
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect
 {
-    glClearColor(0.0f, 0.0f, 0.1f, 1.0f);
+    glClearColor(0.0f, 0.2f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     // render the skybox

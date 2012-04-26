@@ -27,7 +27,8 @@
 @property (strong, nonatomic) RAPage * child3;
 @property (strong, nonatomic) RAPage * child4;
 
-@property (strong) RAGeometry * geometry;
+@property (strong, nonatomic) RATextureWrapper * texture;
+@property (strong, nonatomic) RAGeometry * geometry;
 
 - (RAPage *)initWithTileID:(TileID)t andParent:(RAPage *)parent;
 

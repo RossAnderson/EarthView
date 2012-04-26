@@ -32,8 +32,9 @@ typedef struct {
 
 typedef enum {
     GestureNone = 0,
-    GestureDrag,
-    GestureSpin,
+    GestureGeoDrag,
+    GestureAxisSpin,
+    GestureRotate,
     GestureTilt
 } GestureAction;
 
@@ -41,19 +42,15 @@ typedef enum {
 @implementation RAManipulator {
     CameraState     _state;
     
-    RACamera *      _camera;
     UIView *        _view;
 }
 
-@synthesize camera = _camera;
+@synthesize camera;
 
 - (id)init
 {
     self = [super init];
     if (self) {
-        _camera = [RACamera new];
-        _camera.projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(65.0f), 1, 1, 100);
-        _camera.modelViewMatrix = GLKMatrix4Identity;
     }
     return self;
 }
@@ -115,6 +112,8 @@ typedef enum {
 - (void)setLongitude:(double)longitude {
     NSAssert( !isnan(longitude), @"angle cannot be NAN" );
     longitude = fmod( longitude, 360. );
+    if ( longitude < 0.0 ) longitude += 360.;
+    
     _state.longitude = longitude;
 }
 
@@ -180,12 +179,12 @@ typedef enum {
 {
     GLKVector3 swin = { point.x, point.y, 0 };
     GLKVector3 ewin = { point.x, point.y, 1 };
-    int        viewport[4] = { _camera.viewport.origin.x, _camera.viewport.origin.y + _camera.viewport.size.height, _camera.viewport.size.width, -_camera.viewport.size.height };
+    int        viewport[4] = { self.camera.viewport.origin.x, self.camera.viewport.origin.y + self.camera.viewport.size.height, self.camera.viewport.size.width, -self.camera.viewport.size.height };
     GLKMatrix4 modelViewMatrix = [self modelViewMatrixForState:aState];
         
     bool startValid, endValid;
-    GLKVector3 start = GLKMathUnproject ( swin, modelViewMatrix, _camera.projectionMatrix, viewport, &startValid );
-    GLKVector3 end = GLKMathUnproject ( ewin, modelViewMatrix, _camera.projectionMatrix, viewport, &endValid );
+    GLKVector3 start = GLKMathUnproject ( swin, modelViewMatrix, self.camera.projectionMatrix, viewport, &startValid );
+    GLKVector3 end = GLKMathUnproject ( ewin, modelViewMatrix, self.camera.projectionMatrix, viewport, &endValid );
     
     if ( startValid && endValid ) {
         // find intersection
@@ -201,8 +200,8 @@ typedef enum {
     return NO;
 }
 
-- (void)updateCamera {
-    _camera.modelViewMatrix = [self modelViewMatrixForState:_state];
+- (GLKMatrix4)modelViewMatrix {
+    return [self modelViewMatrixForState:_state];
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
@@ -286,15 +285,16 @@ typedef enum {
             CGFloat xThresh = self.view.bounds.size.width / 10.;
 
             // pick the right gesture
-            if ( pt.y < yThresh || pt.y > self.view.bounds.size.height - yThresh ) 
-                sAction = GestureSpin;
-            else if ( pt.x < xThresh || pt.x > self.view.bounds.size.width - xThresh )
+            if ( pt.y > self.view.bounds.size.height - yThresh ) 
+                sAction = GestureRotate;
+            else if ( pt.x > self.view.bounds.size.width - xThresh )
                 sAction = GestureTilt;
             else {
-                sAction = GestureDrag;
-                
                 // get the current touch position on the globe
-                [self intersectPoint:pt atLatitude:&cursorLatitude atLongitude:&cursorLongitude withState:_state];
+                if ( [self intersectPoint:pt atLatitude:&cursorLatitude atLongitude:&cursorLongitude withState:_state] )
+                    sAction = GestureGeoDrag;
+                else
+                    sAction = GestureAxisSpin;
             }
                         
             startLocation = pt;
@@ -310,17 +310,19 @@ typedef enum {
             }
             
             switch (sAction) {
-                case GestureSpin:
+                case GestureRotate:
                 {
-                    self.azimuth = startState.azimuth + ( pt.x - startLocation.x ) * 0.1;
+                    double angle = ( pt.x - startLocation.x ) * 0.1;
+                    self.azimuth = startState.azimuth + angle;
                     break;
                 }
                 case GestureTilt:
                 {
-                    self.elevation = startState.elevation + ( pt.y - startLocation.y ) * 0.1;
+                    double angle = ( pt.y - startLocation.y ) * 0.1;
+                    self.elevation = startState.elevation + angle;
                     break;
                 }
-                case GestureDrag:
+                case GestureGeoDrag:
                 {
                     double lat, lon;
                     if ( [self intersectPoint:pt atLatitude:&lat atLongitude:&lon withState:_state] ) {
@@ -335,6 +337,12 @@ typedef enum {
                     }
                     break;
                 }
+                case GestureAxisSpin:
+                {
+                    double angle = -( pt.x - startLocation.x ) * 0.1;
+                    self.longitude = startState.longitude + angle;
+                    break;
+                }
                 case GestureNone: break;
             }
             break;
@@ -344,7 +352,7 @@ typedef enum {
             CGPoint vel = [pan velocityInView:self.view];
             
             switch (sAction) {
-                case GestureSpin:
+                case GestureRotate:
                 {
                     // calculate how much movement
                     CGFloat angle = vel.x * 0.03;
@@ -372,7 +380,7 @@ typedef enum {
                     [anim beginWithTarget:self];
                     break;
                 }
-                case GestureDrag:
+                case GestureGeoDrag:
                 {
                     // continue movement in the same direction
                     CGPoint dir = CGPointMake( _state.longitude - startState.longitude, _state.latitude - startState.latitude );
@@ -387,8 +395,8 @@ typedef enum {
                     if ( fabs(angle) < kMinimumAnimatedAngle ) break;
                     
                     CGPoint destination = CGPointMake( _state.longitude + dir.x*angle, _state.latitude + dir.y*angle );
-                    if ( destination.y > kMaximumLatitude ) destination.y = kMaximumLatitude;
-                    if ( destination.y < -kMaximumLatitude ) destination.y = -kMaximumLatitude;
+                    /*if ( destination.y > kMaximumLatitude ) destination.y = kMaximumLatitude;
+                    if ( destination.y < -kMaximumLatitude ) destination.y = -kMaximumLatitude;*/
 
                     // zoom to that location
                     TPPropertyAnimation *anim = [TPPropertyAnimation propertyAnimationWithKeyPath:@"latitude"];
@@ -402,6 +410,25 @@ typedef enum {
                     anim.duration = kAnimationDuration;
                     anim.fromValue = [NSNumber numberWithDouble:_state.longitude];
                     anim.toValue = [NSNumber numberWithDouble:destination.x];
+                    anim.timing = TPPropertyAnimationTimingEaseOut;
+                    [anim beginWithTarget:self];
+                    
+                    break;
+                }
+                case GestureAxisSpin:
+                {
+                    // calculate how much movement
+                    CGFloat speed = vel.x;
+                    CGFloat angle = -( _state.distance / 1e7 ) * speed * 0.1;
+                    if ( fabs(angle) < kMinimumAnimatedAngle ) break;
+                    
+                    float destination = _state.longitude + angle;
+                    
+                    // spin the globe
+                    TPPropertyAnimation *anim = [TPPropertyAnimation propertyAnimationWithKeyPath:@"longitude"];
+                    anim.duration = kAnimationDuration * 2.0;
+                    anim.fromValue = [NSNumber numberWithDouble:_state.longitude];
+                    anim.toValue = [NSNumber numberWithDouble:destination];
                     anim.timing = TPPropertyAnimationTimingEaseOut;
                     [anim beginWithTarget:self];
                     
@@ -429,6 +456,8 @@ typedef enum {
     
     // get the current touch position on the globe
     [self intersectPoint:pt atLatitude:&lat atLongitude:&lon withState:_state];
+    
+    printf("Zoom to: %f, %f\n", lat, lon);
     
     double duration = 1.0;
 

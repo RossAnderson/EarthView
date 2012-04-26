@@ -21,7 +21,7 @@ There is currently no way to select which map layer is displayed at runtime. See
 About the Author
 ----------------
 
-I build advanced airborne 3D imagers at my day job, which leaves me with the creative itch to build something a bit more tactile in my free time. Feel free to contact me at my e-mail (ross.w.anderson@gmail.com) if you have questions, comments, or an interesting business opportunity. Let me know if you use EarthView in your app!
+I build advanced airborne 3D imagers at my day job, which leaves me with the creative itch to build something a bit more tactile in my free time. Feel free to contact me (ross.w.anderson@gmail.com or @rossanderson) if you have questions, comments, or an interesting business opportunity. Let me know if you use EarthView in your app!
 
 License
 -------
@@ -39,6 +39,8 @@ Bugs and Limitations
 --------------------
 
 - The light position lags by 1 frame for some reason.
+- The derived bounding boxes don't appear to be calculated correctly.
+- Should redraw in reaction to Manipulator movement, rather than a constant frame rate. There doesn't appear to be a good way to do this with GLKit.
 - There are holes in the globe at the poles because there is no map tile content there.
 - The tilt control should bounce when you hit the hard stops.
 - Add support for MBTiles (http://mapbox.com/mbtiles-spec/) for locally stored/cached content.

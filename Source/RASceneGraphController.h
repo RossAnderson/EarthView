@@ -9,11 +9,13 @@
 #import <GLKit/GLKit.h>
 
 #import "RANode.h"
+#import "RACamera.h"
 #import "RATileDatabase.h"
 
 @interface RASceneGraphController : GLKViewController
 
 @property (readonly, nonatomic) RANode * sceneRoot;
+@property (readonly, nonatomic) RACamera * camera;
 @property (readonly, nonatomic) RATileDatabase * database;
 
 @end

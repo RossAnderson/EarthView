@@ -8,16 +8,16 @@
 
 #import <Foundation/Foundation.h>
 
-#import "RARenderVisitor.h"
-
 #import <GLKit/GLKit.h>
-#import "RAGeographicUtils.h"
+
 #import "RACamera.h"
+#import "RAGeographicUtils.h"
 
 @interface RAManipulator : NSObject <UIGestureRecognizerDelegate>
 
-@property (readonly) RACamera * camera;
 @property (weak) UIView * view;
+
+@property (strong) RACamera * camera;
 
 // animatable
 @property (assign) double latitude;
@@ -26,6 +26,6 @@
 @property (assign) double elevation;
 @property (assign) double distance;
 
-- (void)updateCamera;
+- (GLKMatrix4)modelViewMatrix;
 
 @end

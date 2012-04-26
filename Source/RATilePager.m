@@ -14,7 +14,7 @@
 #import <Foundation/Foundation.h>
 #import <GLKit/GLKVector2.h>
 
-//#define ENABLE_GRID_OVERLAY
+#define SHOW_DEBUG_GRID 0
 
 @interface RAPageDelta : NSObject
 @property (strong) NSSet * pagesToAdd;
@@ -29,9 +29,6 @@
 @implementation RATilePager {
     RATileDatabase *        _database;
     RATextureWrapper *      _defaultTexture;
-#ifdef ENABLE_GRID_OVERLAY
-    RATextureWrapper *      _overlayTexture;
-#endif
     
     NSOperationQueue *      _loadQueue;
     __weak NSOperation *    _traverseOp;
@@ -208,12 +205,18 @@
         // generate the geometry
         page.geometry = [self createGeometryForTile:page.tile];
         
+        // set this macro to 1 to skip page loading and display a grid instead
+#if SHOW_DEBUG_GRID
+        [self setupPageGeometry:page.geometry forTile:page.tile withTexForTile:page.tile];
+        page.geometry.texture0 = _defaultTexture;
+        return;
+#endif
+        
         // find an ancestor tile with a valid texture
         RAPage * ancestor = page;
         while( ancestor ) {
             // texture valid? use this page
-            if ( ancestor.geometry.texture0 && ancestor.geometry.texture0 != _defaultTexture )
-                break;
+            if ( ancestor.texture ) break;
             
             ancestor = ancestor.parent;
         }
@@ -221,19 +224,17 @@
         if ( ancestor ) {
             // recycle texture with appropriate tex coords
             [self setupPageGeometry:page.geometry forTile:page.tile withTexForTile:ancestor.tile];
-            page.geometry.texture0 = ancestor.geometry.texture0;
+            page.geometry.texture0 = ancestor.texture;
         } else {
             // show grid if necessary
             [self setupPageGeometry:page.geometry forTile:page.tile withTexForTile:page.tile];
             page.geometry.texture0 = _defaultTexture;
         }
         
-#ifdef ENABLE_GRID_OVERLAY
-        page.geometry.texture1 = _overlayTexture;
-#endif
+        // if we already have a texture, we don't need to load it
+        if ( page.texture ) return;
 
         // request the tile image
-#if 1   /* set this to 0 to skip page loading and display a grid instead */
         NSURL * url = [self.database urlForTile: page.tile];
         if ( url ) {
             NSURLRequest * request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestReturnCacheDataElseLoad timeoutInterval:15.0];
@@ -255,8 +256,12 @@
                     if ( error ) {
                         NSLog(@"Error loading texture: %@", error);
                     } else {
+                        // generate texture wrapper
+                        RATextureWrapper * texture = [[RATextureWrapper alloc] initWithTextureInfo:textureInfo];
+                        page.texture = texture;
+                        
                         [self setupPageGeometry:page.geometry forTile:page.tile withTexForTile:page.tile];
-                        page.geometry.texture0 = [[RATextureWrapper alloc] initWithTextureInfo:textureInfo];
+                        page.geometry.texture0 = texture;
                     }
                     
                     glFlush();
@@ -264,7 +269,6 @@
                 }
             }];
         }
-#endif
     }
 }
 
@@ -350,7 +354,7 @@
         _defaultTexture = [[RATextureWrapper alloc] initWithTextureInfo:textureInfo];
     }
     
-#ifdef ENABLE_GRID_OVERLAY
+    /*
     if ( _overlayTexture == nil ) {
         UIImage * image = [UIImage imageNamed:@"clear256"];
         
@@ -361,40 +365,40 @@
         
         _overlayTexture = [[RATextureWrapper alloc] initWithTextureInfo:textureInfo];
     }
-#endif
+    */
     
     BOOL doTraversal = ( _loadQueue.operationCount == 0 );
-    
+
     // begin a traversal if necessary
     if ( _traverseOp == nil && doTraversal ) {
         NSBlockOperation * op = [NSBlockOperation blockOperationWithBlock:^{
             NSMutableSet * currentPages = [[NSMutableSet alloc] init];
-            
-            // traverse pages looking for changes
+    
+            // traverse pages gathering ones that are active and should be displayed
             [rootPages enumerateObjectsUsingBlock:^(RAPage *page, BOOL *stop) {
                 [self traversePage:page collectActivePages:currentPages];
             }];
-            
+
             @synchronized(self) {
                 NSMutableSet * insertPages = [currentPages mutableCopy];
                 [insertPages minusSet: _activePages];
-
+                
                 NSMutableSet * removePages = [_activePages mutableCopy];
                 [removePages minusSet: currentPages];
                 
-                //NSLog(@"New Active: %d, Insert: %d, Remove: %d", currentPages.count, insertPages.count, removePages.count);
                 _insertPages = insertPages;
                 _removePages = removePages;
                 _activePages = currentPages;
             }
         }];
+        
         [_loadQueue addOperation:op];
         _traverseOp = op;
     }
-        
+    
     @synchronized(self) {
         //NSLog(@"Active: %d, Insert: %d, Remove: %d, Load Ops: %d", _activePages.count, _insertPages.count, _removePages.count, _loadQueue.operationCount);
-                        
+        
         // add new pages
         [_insertPages enumerateObjectsUsingBlock:^(RAPage * page, BOOL *stop) {
             [nodes addChild: page.geometry];
@@ -414,7 +418,7 @@
         _insertPages = nil;
         _removePages = nil;
     }
-    
+
     [RATextureWrapper cleanup];
 }
 

@@ -97,6 +97,10 @@ RAPolarCoordinate ConvertEcefToPolar( GLKVector3 ecef )
     polar.longitude *= RAD_TO_DEG;
     polar.height *= 1./kEcefScale;
     
+    // normalize
+    if ( polar.latitude < 0.0 ) polar.latitude += 360.;
+    if ( polar.longitude < 0.0 ) polar.longitude += 360.;
+    
     return polar;
 }
 

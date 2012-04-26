@@ -20,8 +20,9 @@
 
 @synthesize tile, key;
 @synthesize bound = _bound;
-@synthesize geometry = _geometry;
 @synthesize parent = _parent, child1, child2, child3, child4;
+@synthesize texture = _texture;
+@synthesize geometry = _geometry;
 //@synthesize lastRequestTime;
 
 - (RAPage *)initWithTileID:(TileID)t andParent:(RAPage *)parent;

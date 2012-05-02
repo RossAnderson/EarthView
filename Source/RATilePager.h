@@ -19,13 +19,15 @@
 
 @interface RATilePager : NSObject
 
-@property (strong) RATileDatabase * database;
+@property (strong) RATileDatabase * imageryDatabase;
+@property (strong) RATileDatabase * terrainDatabase;
 @property (strong) EAGLContext * loadingContext;
 
 @property (readonly) RAGroup * nodes;
 @property (readonly) NSSet * rootPages;
 @property (strong) RACamera * camera;
 
+- (void)setup;  // call once the databases are configured
 - (void)updateSceneGraph;
 
 @end

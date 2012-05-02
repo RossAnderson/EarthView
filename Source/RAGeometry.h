@@ -23,7 +23,6 @@
 @property (strong, nonatomic) RATextureWrapper * texture0;
 @property (strong, nonatomic) RATextureWrapper * texture1;
 @property (assign, nonatomic) GLKVector4 color;         // set 1st component to -1 to disable
-@property (retain, nonatomic) GLKEffectPropertyMaterial * material;
 @property (assign, nonatomic) GLenum elementStyle;      // default: GL_TRIANGLES
 
 - (void)setObjectData:(const void *)data withSize:(NSUInteger)length withStride:(NSUInteger)stride;

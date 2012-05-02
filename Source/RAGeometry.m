@@ -43,7 +43,6 @@
 @synthesize textureOffset = _textureOffset;
 @synthesize texture0 = _texture0, texture1 = _texture1;
 @synthesize color = _color;
-@synthesize material = _material;
 @synthesize elementStyle = _elementStyle;
 
 
@@ -241,8 +240,22 @@
         [self setupGL];
     
     @synchronized(self) {
+        glActiveTexture (GL_TEXTURE0);
+        if ( _texture0 ) {
+            glBindTexture(GL_TEXTURE_2D, _texture0.name);
+        } else {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
+        glActiveTexture (GL_TEXTURE1);
+        if ( _texture1 ) {
+            glBindTexture(GL_TEXTURE_2D, _texture1.name);
+        } else {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
         glBindVertexArrayOES(_vertexArray);
-        
+
         if ( _indexStride > 0 && [_indexData length] > 0 ) {
             GLenum type = -1;
             switch( _indexStride ) {

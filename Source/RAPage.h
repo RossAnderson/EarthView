@@ -19,7 +19,6 @@
 @property (readonly, nonatomic) TileID tile;
 @property (readonly, nonatomic) NSString * key;
 @property (readonly, nonatomic) RABoundingSphere * bound;
-//@property (assign, nonatomic) NSTimeInterval lastRequestTime;
 
 @property (readonly, nonatomic) RAPage * parent;
 @property (strong, nonatomic) RAPage * child1;
@@ -27,13 +26,17 @@
 @property (strong, nonatomic) RAPage * child3;
 @property (strong, nonatomic) RAPage * child4;
 
-@property (strong, nonatomic) RATextureWrapper * texture;
 @property (strong, nonatomic) RAGeometry * geometry;
 
-- (RAPage *)initWithTileID:(TileID)t andParent:(RAPage *)parent;
+@property (strong, nonatomic) RATextureWrapper * imagery;
+@property (strong, nonatomic) UIImage * terrain;
 
-- (BOOL)isReady;
-- (BOOL)isLeaf;
+@property (assign, atomic) BOOL needsUpdate;
+@property (weak, atomic) NSOperation * imageryLoadOp;
+@property (weak, atomic) NSOperation * terrainLoadOp;
+@property (weak, atomic) NSOperation * updatePageOp;
+
+- (RAPage *)initWithTileID:(TileID)t andParent:(RAPage *)parent;
 
 - (void)setCenter:(GLKVector3)center andRadius:(double)radius;
 

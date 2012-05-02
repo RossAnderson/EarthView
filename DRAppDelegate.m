@@ -10,7 +10,8 @@
 
 #import "RASceneGraphController.h"
 
-#define SAMPLE_DATASET 4
+#define IMAGERY_DATASET 2
+#define TERRAIN_DATASET 1
 
 
 @implementation DRAppDelegate
@@ -29,19 +30,23 @@
     }
     
     // setup the tile set used
-    RATileDatabase * database = self.viewController.database;
-    switch( SAMPLE_DATASET ) {
+    RATileDatabase * database = [RATileDatabase new];
+    database.bounds = CGRectMake( -180,-90,360,180 );
+    database.googleTileConvention = YES;
+    database.minzoom = 2;
+    
+    switch( IMAGERY_DATASET ) {
         case 1:
-            // Sample database from: http://a.tiles.mapbox.com/v3/mapbox.blue-marble-topo-jul-bw.jsonp
+            // MapBox Streets: http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets.jsonp
             database.baseUrlStrings = [NSArray arrayWithObjects:
-                @"http://a.tiles.mapbox.com/v3/mapbox.blue-marble-topo-jul-bw/{z}/{x}/{y}.png",
-                @"http://b.tiles.mapbox.com/v3/mapbox.blue-marble-topo-jul-bw/{z}/{x}/{y}.png",
-                @"http://c.tiles.mapbox.com/v3/mapbox.blue-marble-topo-jul-bw/{z}/{x}/{y}.png",
-                @"http://d.tiles.mapbox.com/v3/mapbox.blue-marble-topo-jul-bw/{z}/{x}/{y}.png",
-                nil];
-            
-            database.maxzoom = 8;
+                                       @"http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
+                                       @"http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
+                                       @"http://c.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
+                                       @"http://d.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
+                                       nil];
+            database.maxzoom = 17;
             break;
+            
         case 2:
             // Sample database from: http://a.tiles.mapbox.com/v3/mapbox.blue-marble-topo-bathy-jul.jsonp
             database.baseUrlStrings = [NSArray arrayWithObjects:
@@ -52,6 +57,7 @@
                nil];
             database.maxzoom = 8;
             break;
+            
         case 3:
             // OpenStreetMap
             database.baseUrlStrings = [NSArray arrayWithObjects:
@@ -61,24 +67,46 @@
                nil];
             database.maxzoom = 18;
             break;
+            
         case 4:
-            // MapBox Streets: http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets.jsonp
+            // Stamen Maps Watercolor - http://maps.stamen.com/watercolor
             database.baseUrlStrings = [NSArray arrayWithObjects:
-               @"http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
-               @"http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
-               @"http://c.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
-               @"http://d.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
-               nil];
+                @"http://a.tile.stamen.com/watercolor/{z}/{x}/{y}.png",
+                @"http://b.tile.stamen.com/watercolor/{z}/{x}/{y}.png",
+                @"http://c.tile.stamen.com/watercolor/{z}/{x}/{y}.png",
+                nil];
             database.maxzoom = 17;
             break;
-        /*
-        case 5:
+            
         default:
-            // Stamen Maps Watercolor - http://maps.stamen.com/watercolor
-            database.baseUrlString = @"http://a.tile.stamen.com/watercolor/{z}/{x}/{y}.png";
-            database.maxzoom = 17;
-        */
+            database = nil;
+            break;
     }
+    self.viewController.pager.imageryDatabase = database;
+    
+    // setup height tile dataset
+    database = [RATileDatabase new];
+    database.bounds = CGRectMake( -180,-90,360,180 );
+    database.googleTileConvention = YES;
+    database.minzoom = 2;
+    
+    switch ( TERRAIN_DATASET ) {
+        case 1:
+            // World Topography: https://tiles.mapbox.com/v3/dancingrobots.world-topo
+            database.baseUrlStrings = [NSArray arrayWithObjects:
+                @"http://a.tiles.mapbox.com/v3/dancingrobots.world-topo/{z}/{x}/{y}.png",
+                @"http://b.tiles.mapbox.com/v3/dancingrobots.world-topo/{z}/{x}/{y}.png",
+                @"http://c.tiles.mapbox.com/v3/dancingrobots.world-topo/{z}/{x}/{y}.png",
+                @"http://d.tiles.mapbox.com/v3/dancingrobots.world-topo/{z}/{x}/{y}.png",
+                nil];
+            database.maxzoom = 8;
+            break;
+            
+        default:
+            database = nil;
+            break;
+    }
+    self.viewController.pager.terrainDatabase = database;
     
     self.window.rootViewController = self.viewController;
     [self.window makeKeyAndVisible];

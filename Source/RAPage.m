@@ -12,8 +12,6 @@
     RABoundingSphere *  _bound;
     RAPage *            _parent;
     
-    RAGeometry *        _geometry;
-
     NSURLConnection *   _connection;
     NSMutableData *     _imageData;
 }
@@ -21,9 +19,8 @@
 @synthesize tile, key;
 @synthesize bound = _bound;
 @synthesize parent = _parent, child1, child2, child3, child4;
-@synthesize texture = _texture;
-@synthesize geometry = _geometry;
-//@synthesize lastRequestTime;
+@synthesize geometry, imagery, terrain;
+@synthesize needsUpdate, imageryLoadOp, terrainLoadOp, updatePageOp;
 
 - (RAPage *)initWithTileID:(TileID)t andParent:(RAPage *)parent;
 {
@@ -31,6 +28,7 @@
     if (self) {
         tile = t;
         key = [NSString stringWithFormat:@"{%d,%d,%d}", t.z, t.x, t.y];
+        needsUpdate = YES;
         _parent = parent;
     }
     return self;
@@ -44,14 +42,6 @@
     _bound = [RABoundingSphere new];
     _bound.center = center;
     _bound.radius = radius;
-}
-
-- (BOOL)isReady {
-    return _geometry != nil;
-}
-
-- (BOOL)isLeaf {
-    return ( child1 == nil && child2 == nil && child3 == nil && child4 == nil );
 }
 
 @end

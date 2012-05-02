@@ -38,7 +38,6 @@ The example application connects to various map tile services over the web such 
 Bugs and Limitations
 --------------------
 
-- The light position lags by 1 frame for some reason.
 - The derived bounding boxes don't appear to be calculated correctly.
 - Should redraw in reaction to Manipulator movement, rather than a constant frame rate. There doesn't appear to be a good way to do this with GLKit.
 - There are holes in the globe at the poles because there is no map tile content there.

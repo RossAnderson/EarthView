@@ -219,8 +219,6 @@ typedef enum {
     static CameraState startState;
     static CGFloat startScale = 1;
     
-    [self stop:nil];
-
     switch( [pinch state] ) {
         case UIGestureRecognizerStatePossible:
             break;
@@ -229,6 +227,8 @@ typedef enum {
             _state = startState;
             break;
         case UIGestureRecognizerStateBegan:
+            [self stop:nil];
+
             startState = _state;
             startScale = pinch.scale;
             break;
@@ -270,8 +270,6 @@ typedef enum {
     
     CGPoint pt = [pan locationInView:self.view];
 
-    [self stop:nil];
-
     switch( [pan state] ) {
         case UIGestureRecognizerStatePossible:
             break;
@@ -281,6 +279,8 @@ typedef enum {
             break;
         case UIGestureRecognizerStateBegan:
         {
+            [self stop:nil];
+
             CGFloat yThresh = self.view.bounds.size.height / 10.;
             CGFloat xThresh = self.view.bounds.size.width / 10.;
 
@@ -384,6 +384,9 @@ typedef enum {
                 {
                     // continue movement in the same direction
                     CGPoint dir = CGPointMake( _state.longitude - startState.longitude, _state.latitude - startState.latitude );
+                    if ( dir.x > 180. ) dir.x -= 360.;
+                    if ( dir.x < -180. ) dir.x += 360.;
+
                     CGFloat length = sqrt( dir.x*dir.x + dir.y*dir.y );
                     if ( length < 1 ) break;
                     dir.x /= length;
@@ -397,7 +400,7 @@ typedef enum {
                     CGPoint destination = CGPointMake( _state.longitude + dir.x*angle, _state.latitude + dir.y*angle );
                     /*if ( destination.y > kMaximumLatitude ) destination.y = kMaximumLatitude;
                     if ( destination.y < -kMaximumLatitude ) destination.y = -kMaximumLatitude;*/
-
+                    
                     // zoom to that location
                     TPPropertyAnimation *anim = [TPPropertyAnimation propertyAnimationWithKeyPath:@"latitude"];
                     anim.duration = kAnimationDuration;
@@ -446,6 +449,8 @@ typedef enum {
 - (void)stop:(id)sender {
     // cancel animations in progress
     [[TPPropertyAnimation allPropertyAnimationsForTarget:self] makeObjectsPerformSelector:@selector(cancel)];
+
+    //printf("Stop\n");
 }
 
 - (void)zoomToLocation:(id)sender {
@@ -457,7 +462,7 @@ typedef enum {
     // get the current touch position on the globe
     [self intersectPoint:pt atLatitude:&lat atLongitude:&lon withState:_state];
     
-    printf("Zoom to: %f, %f\n", lat, lon);
+    //printf("Zoom to: %f, %f\n", lat, lon);
     
     double duration = 1.0;
 

@@ -51,11 +51,9 @@
 @interface RASceneGraphController () {
     RARenderVisitor *   renderVisitor;
     RAManipulator *     manipulator;
-    RATileDatabase *    database;
-    RATilePager *       pager;
     
     EAGLContext *       context;
-    GLKBaseEffect *     effect;
+    //GLKBaseEffect *     effect;
     GLKSkyboxEffect *   skybox;
 }
 
@@ -68,7 +66,7 @@
 
 @synthesize sceneRoot = _sceneRoot;
 @synthesize camera = _camera;
-@synthesize database = database;
+@synthesize pager = _pager;
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
@@ -84,7 +82,7 @@
         renderVisitor = [RARenderVisitor new];
         renderVisitor.camera = self.camera;
 
-        database = [RATileDatabase new];
+        RATileDatabase * database = [RATileDatabase new];
         database.bounds = CGRectMake( -180,-90,360,180 );
         database.googleTileConvention = YES;
         
@@ -94,9 +92,9 @@
         database.maxzoom = 18;
         
         // setup the database pager
-        pager = [RATilePager new];
-        pager.database = database;
-        pager.camera = self.camera;
+        _pager = [RATilePager new];
+        _pager.imageryDatabase = database;
+        _pager.camera = self.camera;
 }
     return self;
 }
@@ -119,8 +117,9 @@
     manipulator.view = self.view;
     
     // create another context to load textures into
-    pager.loadingContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:[context sharegroup]];
+    self.pager.loadingContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:[context sharegroup]];
     
+    [self.pager setup];
     [self setupGL];
 }
 
@@ -151,8 +150,8 @@
     }
 }
 
-#pragma mark - Scene Graph
 
+#pragma mark - Scene Graph
 
 - (RAGeometry *)makeBoxWithHalfWidth:(GLfloat)half
 {
@@ -226,7 +225,7 @@
 - (RANode *)createBlueMarble
 {
     RAGroup * root = [RAGroup new];
-    [root addChild: pager.nodes];
+    [root addChild: self.pager.nodes];
         
     return root;
 }
@@ -240,9 +239,9 @@
     glEnable(GL_BLEND);
     glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
     
-    effect = [[GLKBaseEffect alloc] init];
+    /*effect = [[GLKBaseEffect alloc] init];
     effect.label = @"Base Effect";
-    effect.light0.enabled = GL_TRUE;
+    effect.light0.enabled = GL_TRUE;*/
     
     // setup skybox
     NSString * starPath = [[NSBundle mainBundle] pathForResource:@"star1" ofType:@"png"];
@@ -266,6 +265,7 @@
     //[self.sceneRoot accept: setupVisitor];
     
     [self update];
+    [renderVisitor setupGL];
 }
 
 - (void)tearDownGL
@@ -275,7 +275,8 @@
     ReleaseGeometryVisitor * releaseVisitor = [[ReleaseGeometryVisitor alloc] init];
     [self.sceneRoot accept: releaseVisitor];
     
-    effect = nil;
+    //effect = nil;
+    [renderVisitor tearDownGL];
 }
 
 #pragma mark - GLKView and GLKViewController delegate methods
@@ -283,13 +284,14 @@
 - (void)update
 {
     self.camera.modelViewMatrix = [manipulator modelViewMatrix];
-
+    
     // position light directly above the globe
     RAPolarCoordinate lightPolar = {
         manipulator.latitude, manipulator.longitude, 1e7
     };
     GLKVector3 lightEcef = ConvertPolarToEcef( lightPolar );
-    effect.light0.position = GLKVector4MakeWithVector3(lightEcef, 1.0);
+    //effect.light0.position = GLKVector4MakeWithVector3(lightEcef, 1.0);
+    renderVisitor.lightPosition = lightEcef;
     
     // !!! the scene view bound is incorrect
     
@@ -311,7 +313,7 @@
     skybox.transform.projectionMatrix = projectionMatrix;
     skybox.transform.modelviewMatrix = self.camera.modelViewMatrix;
 
-    [pager updateSceneGraph];
+    [self.pager updateSceneGraph];
 }
 
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect
@@ -328,12 +330,19 @@
     // run the render visitor
     [renderVisitor clear];
     [self.sceneRoot accept: renderVisitor];
-    [renderVisitor renderWithEffect: effect];
+    [renderVisitor render];
     
     // check for errors
     GLenum err = glGetError();
-    if ( err != GL_NO_ERROR ) {
-        NSLog(@"glGetError = %d", err);
+    switch( err ) {
+        case GL_NO_ERROR:                                                       break;
+        case GL_INVALID_ENUM:       NSLog(@"glGetError: invalid enum");         break;
+        case GL_INVALID_VALUE:      NSLog(@"glGetError: invalid value");        break;
+        case GL_INVALID_OPERATION:  NSLog(@"glGetError: invalid operation");    break;
+        case GL_STACK_OVERFLOW:     NSLog(@"glGetError: stack overflow");       break;
+        case GL_STACK_UNDERFLOW:    NSLog(@"glGetError: stack underflow");      break;
+        case GL_OUT_OF_MEMORY:      NSLog(@"glGetError: out of memory");        break;
+        default:        NSLog(@"glGetError: unknown error = 0x%04X", err);      break;
     }
 }
 

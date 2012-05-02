@@ -9,11 +9,13 @@
 /* Begin PBXBuildFile section */
 		9109E03C153D86100008286D /* star1.png in Resources */ = {isa = PBXBuildFile; fileRef = 9109E03B153D86100008286D /* star1.png */; };
 		9109E03E153D864F0008286D /* RASceneGraphController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9109E03D153D864F0008286D /* RASceneGraphController.m */; };
-		91BBDFB2153A49A900CEF4BA /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 91BBDFB1153A49A900CEF4BA /* README.md */; };
 		91C9975C1548E1BF00B69A8A /* Icon114.png in Resources */ = {isa = PBXBuildFile; fileRef = 91C9975B1548E1BF00B69A8A /* Icon114.png */; };
 		91C9975E1548E1F000B69A8A /* Icon57.png in Resources */ = {isa = PBXBuildFile; fileRef = 91C9975D1548E1F000B69A8A /* Icon57.png */; };
 		91C997601548E21400B69A8A /* Icon144.png in Resources */ = {isa = PBXBuildFile; fileRef = 91C9975F1548E21400B69A8A /* Icon144.png */; };
 		91C997621548E22E00B69A8A /* Icon72.png in Resources */ = {isa = PBXBuildFile; fileRef = 91C997611548E22E00B69A8A /* Icon72.png */; };
+		91C9979D1549DBD400B69A8A /* Shader.fsh in Resources */ = {isa = PBXBuildFile; fileRef = 91C9979B1549DBD400B69A8A /* Shader.fsh */; };
+		91C9979E1549DBD400B69A8A /* Shader.vsh in Resources */ = {isa = PBXBuildFile; fileRef = 91C9979C1549DBD400B69A8A /* Shader.vsh */; };
+		91F22019154C7B4700A5F74E /* RAShaderProgram.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F22018154C7B4700A5F74E /* RAShaderProgram.m */; };
 		91F77E271539335000F8AE05 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91F77E261539335000F8AE05 /* UIKit.framework */; };
 		91F77E291539335000F8AE05 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91F77E281539335000F8AE05 /* Foundation.framework */; };
 		91F77E2B1539335000F8AE05 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91F77E2A1539335000F8AE05 /* CoreGraphics.framework */; };
@@ -42,7 +44,6 @@
 		91F77EA51539C32D00F8AE05 /* TPPropertyAnimation.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E731539341B00F8AE05 /* TPPropertyAnimation.m */; };
 		91F77EA7153A089A00F8AE05 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91F77EA6153A089A00F8AE05 /* QuartzCore.framework */; };
 		91F77EA8153A08C300F8AE05 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 91F77E8D1539349900F8AE05 /* main.m */; };
-		91F77EAC153A0F9B00F8AE05 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 91F77EAB153A0F9A00F8AE05 /* LICENSE.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -53,6 +54,10 @@
 		91C9975D1548E1F000B69A8A /* Icon57.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon57.png; sourceTree = "<group>"; };
 		91C9975F1548E21400B69A8A /* Icon144.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon144.png; sourceTree = "<group>"; };
 		91C997611548E22E00B69A8A /* Icon72.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon72.png; sourceTree = "<group>"; };
+		91C9979B1549DBD400B69A8A /* Shader.fsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = Shader.fsh; sourceTree = "<group>"; };
+		91C9979C1549DBD400B69A8A /* Shader.vsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = Shader.vsh; sourceTree = "<group>"; };
+		91F22017154C7B4600A5F74E /* RAShaderProgram.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RAShaderProgram.h; sourceTree = "<group>"; };
+		91F22018154C7B4700A5F74E /* RAShaderProgram.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RAShaderProgram.m; sourceTree = "<group>"; };
 		91F77E221539335000F8AE05 /* EarthViewExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EarthViewExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		91F77E261539335000F8AE05 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		91F77E281539335000F8AE05 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -121,6 +126,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		91C9979A1549DBD300B69A8A /* Shaders */ = {
+			isa = PBXGroup;
+			children = (
+				91C9979B1549DBD400B69A8A /* Shader.fsh */,
+				91C9979C1549DBD400B69A8A /* Shader.vsh */,
+			);
+			path = Shaders;
+			sourceTree = SOURCE_ROOT;
+		};
 		91F77E171539335000F8AE05 = {
 			isa = PBXGroup;
 			children = (
@@ -162,6 +176,7 @@
 				91F77E461539335100F8AE05 /* SceneView_iPad.xib */,
 				91F77E531539341B00F8AE05 /* Source */,
 				91F77E841539342A00F8AE05 /* Images */,
+				91C9979A1549DBD300B69A8A /* Shaders */,
 				91F77E311539335000F8AE05 /* Supporting Files */,
 			);
 			path = EarthViewExample;
@@ -211,6 +226,8 @@
 				91F77E6F1539341B00F8AE05 /* RATilePager.m */,
 				91F77E701539341B00F8AE05 /* RATransform.h */,
 				91F77E711539341B00F8AE05 /* RATransform.m */,
+				91F22017154C7B4600A5F74E /* RAShaderProgram.h */,
+				91F22018154C7B4700A5F74E /* RAShaderProgram.m */,
 				91F77E721539341B00F8AE05 /* TPPropertyAnimation.h */,
 				91F77E731539341B00F8AE05 /* TPPropertyAnimation.m */,
 			);
@@ -288,11 +305,11 @@
 				91F77E481539335100F8AE05 /* SceneView_iPad.xib in Resources */,
 				91F77E891539342A00F8AE05 /* clear256.png in Resources */,
 				91F77E8B1539342A00F8AE05 /* grid256.png in Resources */,
-				91F77EAC153A0F9B00F8AE05 /* LICENSE.txt in Resources */,
-				91BBDFB2153A49A900CEF4BA /* README.md in Resources */,
 				9109E03C153D86100008286D /* star1.png in Resources */,
 				91C9975C1548E1BF00B69A8A /* Icon114.png in Resources */,
 				91C9975E1548E1F000B69A8A /* Icon57.png in Resources */,
+				91C9979D1549DBD400B69A8A /* Shader.fsh in Resources */,
+				91C9979E1549DBD400B69A8A /* Shader.vsh in Resources */,
 				91C997601548E21400B69A8A /* Icon144.png in Resources */,
 				91C997621548E22E00B69A8A /* Icon72.png in Resources */,
 			);
@@ -323,6 +340,7 @@
 				91F77E971539C31E00F8AE05 /* RACamera.m in Sources */,
 				91F77E981539C31E00F8AE05 /* RAGeographicUtils.c in Sources */,
 				9109E03E153D864F0008286D /* RASceneGraphController.m in Sources */,
+				91F22019154C7B4700A5F74E /* RAShaderProgram.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

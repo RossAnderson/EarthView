@@ -13,6 +13,27 @@
 #import <GLKit/GLKMathUtils.h>
 
 #import "RABoundingSphere.h"
+#import "RAShaderProgram.h"
+
+// Uniform index.
+enum
+{
+    UNIFORM_MODELVIEWPROJECTION_MATRIX,
+//    UNIFORM_NORMAL_MATRIX,
+    UNIFORM_TEXTURE0,
+    UNIFORM_LIGHT_DIRECTION,
+    UNIFORM_LIGHT_AMBIENT_COLOR,
+    UNIFORM_LIGHT_DIFFUSE_COLOR,
+    NUM_UNIFORMS
+};
+
+// Attribute index.
+/*enum
+{
+    ATTRIB_VERTEX,
+    ATTRIB_NORMAL,
+    NUM_ATTRIBUTES
+};*/
 
 
 #pragma mark -
@@ -32,20 +53,27 @@
 #pragma mark -
 
 @implementation RARenderVisitor {
-    NSMutableArray * renderQueue;
+    NSMutableArray *    renderQueue;
+    RAShaderProgram *   shader;
 }
 
 @synthesize camera;
+@synthesize lightPosition = _lightPosition, lightAmbientColor = _lightAmbientColor, lightDiffuseColor = _lightDiffuseColor;
 
 - (id)init
 {
     self = [super init];
     if (self) {
         renderQueue = [NSMutableArray new];
+        shader = [[RAShaderProgram alloc] init];
         
         self.camera = [RACamera new];
         self.camera.projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(65.0f), 1, 1, 100);
         self.camera.modelViewMatrix = GLKMatrix4Identity;
+        
+        self.lightPosition = GLKVector3Make(1.0, 1.0, 1.0);
+        self.lightAmbientColor = GLKVector4Make(0.1, 0.1, 0.1, 1.0);
+        self.lightDiffuseColor = GLKVector4Make(0.9, 0.9, 0.9, 1.0);
     }
     return self;
 }
@@ -62,52 +90,49 @@
     }];
 }
 
-- (void)renderWithEffect:(GLKBaseEffect *)effect
+- (void)setupGL
+{
+    if ( [shader loadShader:@"Shader"] ) {
+        [shader bindAttribute:@"position" toIdentifier:GLKVertexAttribPosition];
+        [shader bindAttribute:@"normal" toIdentifier:GLKVertexAttribNormal];
+        [shader bindAttribute:@"textureCoordinate" toIdentifier:GLKVertexAttribTexCoord0];
+
+        [shader link];
+        
+        [shader bindUniform:@"modelViewProjectionMatrix" toIdentifier:UNIFORM_MODELVIEWPROJECTION_MATRIX];
+        [shader bindUniform:@"lightDirection" toIdentifier:UNIFORM_LIGHT_DIRECTION];
+        [shader bindUniform:@"lightAmbientColor" toIdentifier:UNIFORM_LIGHT_AMBIENT_COLOR];
+        [shader bindUniform:@"lightDiffuseColor" toIdentifier:UNIFORM_LIGHT_DIFFUSE_COLOR];
+        [shader bindUniform:@"texture0" toIdentifier:UNIFORM_TEXTURE0];
+    }
+}
+
+- (void)tearDownGL
+{
+    [shader tearDownGL];
+}
+
+- (void)render
 {
     [self sortBackToFront];
     
-    effect.transform.projectionMatrix = self.camera.projectionMatrix;
+    if ( ! [shader isReady] ) [self setupGL];
+    [shader use];
     
+    // set light source
+    [shader setUniform:UNIFORM_LIGHT_DIRECTION toVector3:GLKVector3Normalize(self.lightPosition)];
+    [shader setUniform:UNIFORM_LIGHT_AMBIENT_COLOR toVector4:self.lightAmbientColor];
+    [shader setUniform:UNIFORM_LIGHT_DIFFUSE_COLOR toVector4:self.lightDiffuseColor];
+    
+    [shader setUniform:UNIFORM_TEXTURE0 toInt:0];
+
     [renderQueue enumerateObjectsUsingBlock:^(RenderData * child, NSUInteger idx, BOOL *stop) {
-        effect.transform.modelviewMatrix = child.modelviewMatrix;
-        effect.colorMaterialEnabled = child.geometry.colorOffset > -1;
+        //GLKMatrix3 normalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(child.modelviewMatrix), NULL);
+        GLKMatrix4 modelViewProjectionMatrix = GLKMatrix4Multiply(self.camera.projectionMatrix, child.modelviewMatrix);
         
-        if ( child.geometry.material ) {
-            effect.material.ambientColor = child.geometry.material.ambientColor;
-            effect.material.diffuseColor = child.geometry.material.diffuseColor;
-            effect.material.specularColor = child.geometry.material.specularColor;
-            effect.material.emissiveColor = child.geometry.material.emissiveColor;
-            effect.material.shininess = child.geometry.material.shininess;
-        } else {
-            effect.material.ambientColor = (GLKVector4){ 0.2, 0.2, 0.2, 1.0};
-            effect.material.diffuseColor = (GLKVector4){ 0.8, 0.8, 0.8, 1.0};
-            effect.material.specularColor = (GLKVector4){ 0.0, 0.0, 0.0, 1.0};
-            effect.material.emissiveColor = (GLKVector4){ 0.0, 0.0, 0.0, 1.0};
-            effect.material.shininess = 0.0;
-        }
+        [shader setUniform:UNIFORM_MODELVIEWPROJECTION_MATRIX toMatrix4:modelViewProjectionMatrix];
+        //[shader setUniform:UNIFORM_NORMAL_MATRIX toMatrix4:normalMatrix];
         
-        effect.useConstantColor = child.geometry.color.x > -1;
-        effect.constantColor = child.geometry.color;
-        
-        if (child.geometry.texture0 != nil) {
-            effect.texture2d0.envMode = GLKTextureEnvModeModulate;
-            effect.texture2d0.target = GLKTextureTarget2D;
-            effect.texture2d0.name = child.geometry.texture0.name;
-            effect.texture2d0.enabled = YES;
-        } else {
-            effect.texture2d0.enabled = NO;
-        }
-
-        if (child.geometry.texture1 != nil) {
-            effect.texture2d1.envMode = GLKTextureEnvModeModulate;
-            effect.texture2d1.target = GLKTextureTarget2D;
-            effect.texture2d1.name = child.geometry.texture1.name;
-            effect.texture2d1.enabled = YES;
-        } else {
-            effect.texture2d1.enabled = NO;
-        }
-
-        [effect prepareToDraw];
         [child.geometry renderGL];
     }];
 }
@@ -144,6 +169,5 @@
     data.distanceFromCamera = -pc.z;
     [renderQueue addObject: data];
 }
-
 
 @end

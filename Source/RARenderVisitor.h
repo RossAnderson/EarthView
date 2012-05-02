@@ -15,9 +15,16 @@
 @interface RARenderVisitor : RANodeVisitor
 
 @property (strong) RACamera * camera;
+@property (assign) GLKVector3 lightPosition;
+@property (assign) GLKVector4 lightAmbientColor;
+@property (assign) GLKVector4 lightDiffuseColor;
 
 - (void)clear;
 - (void)sortBackToFront;
-- (void)renderWithEffect:(GLKBaseEffect *)effect;
+
+- (void)setupGL;
+- (void)tearDownGL;
+
+- (void)render;
 
 @end

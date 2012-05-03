@@ -116,8 +116,8 @@
     
     manipulator.view = self.view;
     
-    // create another context to load textures into
-    self.pager.loadingContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:[context sharegroup]];
+    // create another context for threaded operations
+    self.pager.auxilliaryContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:[context sharegroup]];
     
     [self.pager setup];
     [self setupGL];
@@ -225,7 +225,7 @@
 - (RANode *)createBlueMarble
 {
     RAGroup * root = [RAGroup new];
-    [root addChild: self.pager.nodes];
+    [root addChild: self.pager.rootNode];
         
     return root;
 }
@@ -313,7 +313,7 @@
     skybox.transform.projectionMatrix = projectionMatrix;
     skybox.transform.modelviewMatrix = self.camera.modelViewMatrix;
 
-    [self.pager updateSceneGraph];
+    [self.pager update];
 }
 
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect

@@ -12,7 +12,7 @@
     NSMutableArray * _children;
 }
 
-@property (readonly) NSArray * children;
+@property (readonly, atomic) NSArray * children;
 
 - (void)addChild:(RANode *)node;
 - (void)removeChild:(RANode *)node;

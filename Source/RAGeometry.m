@@ -120,12 +120,12 @@
     @synchronized(self) {
         _vertexData = [NSMutableData dataWithBytes:data length:length];
         _vertexStride = stride;
+
+        // force re-gen of vertex buffer
+        _vertexDataDirty = YES;
     }
     
     [self dirtyBound];
-    
-    // force re-gen of vertex buffer
-    _vertexDataDirty = YES;
 }
 
 - (void)setIndexData:(const void *)data withSize:(NSUInteger)length withStride:(NSUInteger)stride
@@ -135,12 +135,12 @@
     @synchronized(self) {
         _indexData = [NSMutableData dataWithBytes:data length:length];
         _indexStride = stride;
+        
+        // force re-gen of index buffer
+        _indexDataDirty = YES;
     }
     
     [self dirtyBound];
-
-    // force re-gen of index buffer
-    _indexDataDirty = YES;
 }
 
 - (void)setupGL
@@ -212,6 +212,7 @@
         }
 
         glBindVertexArrayOES(0);
+        //glFlush();
     }
 }
 

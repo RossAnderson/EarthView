@@ -170,4 +170,42 @@ enum
     [renderQueue addObject: data];
 }
 
+- (void)applyPageNode:(RAPageNode *)node
+{
+    [self traversePage: node.page];
+}
+
+- (void)traversePage:(RAPage *)page {
+    // is the page facing away from the camera?
+    if ( [page calculateTiltWithCamera:self.camera] < -0.5f ) return;
+    
+    float texelError = 0.0f;
+    texelError = [page calculateScreenSpaceErrorWithCamera:self.camera];
+    
+    // should we choose to display this page?
+    if ( texelError < 3.f && page.geometry ) {
+        // don't bother traversing if we are offscreen
+        if ( ! [page isOnscreenWithCamera:self.camera] ) return;
+        
+        [self applyGeometry: page.geometry];
+        return;
+    }
+    
+    // are the children available?
+    if ( page.child1.geometry && page.child2.geometry && page.child3.geometry && page.child4.geometry ) {
+        // traverse children
+        [self traversePage: page.child1];
+        [self traversePage: page.child2];
+        [self traversePage: page.child3];
+        [self traversePage: page.child4];
+    } else {
+        // don't bother traversing if we are offscreen
+        if ( ! [page isOnscreenWithCamera:self.camera] ) return;
+        
+        [self applyGeometry: page.geometry];
+        return;
+    }
+}
+
+
 @end

@@ -10,7 +10,7 @@
 
 #import "RASceneGraphController.h"
 
-#define IMAGERY_DATASET 2
+#define IMAGERY_DATASET 1
 #define TERRAIN_DATASET 1
 
 

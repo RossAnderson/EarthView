@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		9109E03C153D86100008286D /* star1.png in Resources */ = {isa = PBXBuildFile; fileRef = 9109E03B153D86100008286D /* star1.png */; };
 		9109E03E153D864F0008286D /* RASceneGraphController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9109E03D153D864F0008286D /* RASceneGraphController.m */; };
+		916EEB8D1552D4E800951ACC /* RAPageNode.m in Sources */ = {isa = PBXBuildFile; fileRef = 916EEB8C1552D4E800951ACC /* RAPageNode.m */; };
 		91C9975C1548E1BF00B69A8A /* Icon114.png in Resources */ = {isa = PBXBuildFile; fileRef = 91C9975B1548E1BF00B69A8A /* Icon114.png */; };
 		91C9975E1548E1F000B69A8A /* Icon57.png in Resources */ = {isa = PBXBuildFile; fileRef = 91C9975D1548E1F000B69A8A /* Icon57.png */; };
 		91C997601548E21400B69A8A /* Icon144.png in Resources */ = {isa = PBXBuildFile; fileRef = 91C9975F1548E21400B69A8A /* Icon144.png */; };
@@ -49,6 +50,8 @@
 /* Begin PBXFileReference section */
 		9109E03B153D86100008286D /* star1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = star1.png; sourceTree = "<group>"; };
 		9109E03D153D864F0008286D /* RASceneGraphController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RASceneGraphController.m; sourceTree = "<group>"; };
+		916EEB8B1552D4E800951ACC /* RAPageNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RAPageNode.h; sourceTree = "<group>"; };
+		916EEB8C1552D4E800951ACC /* RAPageNode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RAPageNode.m; sourceTree = "<group>"; };
 		91BBDFB1153A49A900CEF4BA /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = SOURCE_ROOT; };
 		91C9975B1548E1BF00B69A8A /* Icon114.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon114.png; sourceTree = "<group>"; };
 		91C9975D1548E1F000B69A8A /* Icon57.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon57.png; sourceTree = "<group>"; };
@@ -214,6 +217,8 @@
 				91F77E631539341B00F8AE05 /* RANodeVisitor.m */,
 				91F77E641539341B00F8AE05 /* RAPage.h */,
 				91F77E651539341B00F8AE05 /* RAPage.m */,
+				916EEB8B1552D4E800951ACC /* RAPageNode.h */,
+				916EEB8C1552D4E800951ACC /* RAPageNode.m */,
 				91F77E661539341B00F8AE05 /* RARenderVisitor.h */,
 				91F77E671539341B00F8AE05 /* RARenderVisitor.m */,
 				91F77E681539341B00F8AE05 /* RASceneGraphController.h */,
@@ -341,6 +346,7 @@
 				91F77E981539C31E00F8AE05 /* RAGeographicUtils.c in Sources */,
 				9109E03E153D864F0008286D /* RASceneGraphController.m in Sources */,
 				91F22019154C7B4700A5F74E /* RAShaderProgram.m in Sources */,
+				916EEB8D1552D4E800951ACC /* RAPageNode.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

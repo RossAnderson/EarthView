@@ -70,4 +70,9 @@
     [self applyNode: node];
 }
 
+- (void)applyPageNode:(RAPageNode *)node
+{
+    [self applyNode: node];
+}
+
 @end

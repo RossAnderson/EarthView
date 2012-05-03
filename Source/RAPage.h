@@ -11,6 +11,7 @@
 #import "RAGeographicUtils.h"
 #import "RABoundingSphere.h"
 #import "RAGeometry.h"
+#import "RACamera.h"
 #import "RATileDatabase.h"
 
 
@@ -39,5 +40,9 @@
 - (RAPage *)initWithTileID:(TileID)t andParent:(RAPage *)parent;
 
 - (void)setCenter:(GLKVector3)center andRadius:(double)radius;
+
+- (float)calculateTiltWithCamera:(RACamera *)camera;
+- (float)calculateScreenSpaceErrorWithCamera:(RACamera *)camera;
+- (BOOL)isOnscreenWithCamera:(RACamera *)camera;
 
 @end

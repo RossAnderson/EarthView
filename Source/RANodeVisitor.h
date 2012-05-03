@@ -13,6 +13,7 @@
 #import "RAGroup.h"
 #import "RATransform.h"
 #import "RAGeometry.h"
+#import "RAPageNode.h"
 
 
 @interface RANodeVisitor : NSObject {
@@ -29,5 +30,6 @@
 - (void)applyGroup:(RAGroup *)node;
 - (void)applyTransform:(RATransform *)node;
 - (void)applyGeometry:(RAGeometry *)node;
+- (void)applyPageNode:(RAPageNode *)node;
 
 @end

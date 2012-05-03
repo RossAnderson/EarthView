@@ -21,13 +21,13 @@
 
 @property (strong) RATileDatabase * imageryDatabase;
 @property (strong) RATileDatabase * terrainDatabase;
-@property (strong) EAGLContext * loadingContext;
+@property (strong) EAGLContext * auxilliaryContext;
 
-@property (readonly) RAGroup * nodes;
+@property (readonly) RAGroup * rootNode;
 @property (readonly) NSSet * rootPages;
 @property (strong) RACamera * camera;
 
 - (void)setup;  // call once the databases are configured
-- (void)updateSceneGraph;
+- (void)update;
 
 @end

@@ -8,9 +8,11 @@
 
 #import "RAPage.h"
 
+static NSUInteger sTotalPageCount = 0;
+
 @implementation RAPage {
     RABoundingSphere *  _bound;
-    RAPage *            _parent;
+    __weak RAPage *     _parent;
 }
 
 @synthesize tile, key;
@@ -18,6 +20,10 @@
 @synthesize parent = _parent, child1, child2, child3, child4;
 @synthesize geometry, imagery, terrain;
 @synthesize needsUpdate, imageryLoadOp, terrainLoadOp, updatePageOp;
+
++ (NSUInteger)count {
+    return sTotalPageCount;
+}
 
 - (RAPage *)initWithTileID:(TileID)t andParent:(RAPage *)parent;
 {
@@ -27,20 +33,26 @@
         key = [NSString stringWithFormat:@"{%d,%d,%d}", t.z, t.x, t.y];
         needsUpdate = YES;
         _parent = parent;
+        sTotalPageCount++;
     }
     return self;
 }
 
 - (void)dealloc {
-    [imageryLoadOp cancel];
-    [terrainLoadOp cancel];
-    [updatePageOp cancel];
+    [self cancelOps];
+    sTotalPageCount--;
 }
 
 - (void)setCenter:(GLKVector3)center andRadius:(double)radius {
     _bound = [RABoundingSphere new];
     _bound.center = center;
     _bound.radius = radius;
+}
+
+- (void)cancelOps {
+    [imageryLoadOp cancel];
+    [terrainLoadOp cancel];
+    [updatePageOp cancel];
 }
 
 - (float)calculateTiltWithCamera:(RACamera *)camera {

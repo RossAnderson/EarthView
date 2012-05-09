@@ -11,6 +11,7 @@
 #import "RAGeographicUtils.h"
 #import "RAPage.h"
 #import "RAPageNode.h"
+#import "RAImageSampler.h"
 
 #import <Foundation/Foundation.h>
 #import <GLKit/GLKVector2.h>
@@ -29,12 +30,10 @@
 @implementation RATilePager {
     RATextureWrapper *      _defaultTexture;
     
-    NSOperationQueue *      _urlLoadingQueue;
+    NSOperationQueue *      _loadQueue;
+    NSOperationQueue *      _traverseQueue;
     NSOperationQueue *      _graphicsQueue;
-    
-    /*NSMutableSet *          _activePages;
-    NSMutableSet *          _insertPages;
-    NSMutableSet *          _removePages;*/
+    __weak NSOperation *    _traverseOp;
 }
 
 @synthesize imageryDatabase, terrainDatabase, auxilliaryContext, rootNode, rootPages, camera;
@@ -43,27 +42,30 @@
 {
     self = [super init];
     if (self) {
-        //rootNode = [[RAGroup alloc] init];
-        
         // enlarge shared cache
         NSURLCache * cache = [NSURLCache sharedURLCache];
         [cache setMemoryCapacity: 5*1000*1000];
         [cache setDiskCapacity: 250*1000*1000];
         
-        _urlLoadingQueue = [[NSOperationQueue alloc] init];
-        [_urlLoadingQueue setName:@"URL Loading Queue"];
-        [_urlLoadingQueue setMaxConcurrentOperationCount: 4];
-        
+        _loadQueue = [[NSOperationQueue alloc] init];
+        [_loadQueue setName:@"Loading Queue"];
+
+        _traverseQueue = [[NSOperationQueue alloc] init];
+        [_traverseQueue setName:@"Traverse Queue"];
+
         _graphicsQueue = [[NSOperationQueue alloc] init];
-        [_graphicsQueue setName:@"OpenGL ES Background Queue"];
+        [_graphicsQueue setName:@"OpenGL ES Serial Queue"];
         [_graphicsQueue setMaxConcurrentOperationCount: 1];
     }
     return self;
 }
 
 - (void)dealloc {
-    [_urlLoadingQueue cancelAllOperations];
-    [_urlLoadingQueue waitUntilAllOperationsAreFinished];
+    [_loadQueue cancelAllOperations];
+    [_loadQueue waitUntilAllOperationsAreFinished];
+    
+    [_traverseQueue cancelAllOperations];
+    [_traverseQueue waitUntilAllOperationsAreFinished];
 
     [_graphicsQueue cancelAllOperations];
     [_graphicsQueue waitUntilAllOperationsAreFinished];
@@ -122,33 +124,13 @@
     NSAssert( gridSize*gridSize < 65535, @"too many grid elements" );
 
     size_t vertexDataSize = 8*sizeof(GLfloat) * gridSize*gridSize;
-    GLfloat * vertexData = (GLfloat *)alloca(vertexDataSize);
+    GLfloat * vertexData = (GLfloat *)calloc(gridSize*gridSize, 8*sizeof(GLfloat));
     
     size_t indexDataSize = 6*sizeof(GLushort) * (gridSize-1)*(gridSize-1);
-    GLushort * indexData = (GLushort *)alloca(indexDataSize);
+    GLushort * indexData = (GLushort *)calloc((gridSize-1)*(gridSize-1), 6*sizeof(GLushort));
     
-    // get raw access to image data
-    NSUInteger bytesPerPixel = 4;
-    NSUInteger bytesPerRow = 0;
-    NSUInteger width = 0, height = 0;
-    unsigned char * rawData = NULL;
-    if ( hgtPage.terrain ) {
-        CGImageRef imageRef = [hgtPage.terrain CGImage];
-        width = CGImageGetWidth(imageRef);
-        height = CGImageGetHeight(imageRef);
-        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-        rawData = (unsigned char*)calloc(height * width * 4, sizeof(unsigned char));
-        bytesPerRow = bytesPerPixel * width;
-        NSUInteger bitsPerComponent = 8;
-        CGContextRef context = CGBitmapContextCreate(rawData, width,
-            height,bitsPerComponent, bytesPerRow, colorSpace,
-            kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
-        CGColorSpaceRelease(colorSpace);
+    RAImageSampler * sampler = [[RAImageSampler alloc] initWithImage:hgtPage.terrain];
         
-        CGContextDrawImage(context, CGRectMake(0, 0, width, height), imageRef);
-        CGContextRelease(context);
-    }
-    
     size_t vertexDataPos = 0;
     size_t indexDataPos = 0;
 
@@ -161,24 +143,27 @@
             gpos.height = lowerLeft.height;
 
             GLKVector3 ecef = ConvertPolarToEcef(gpos);
-            GLKVector3 normal = GLKVector3Normalize(ecef);
             GLKVector2 tex = [self.imageryDatabase textureCoordsForLatLon:gpos inTile:texPage.tile];
             
-            if ( rawData ) {
+            if ( sampler ) {
                 GLKVector2 hgtPixel = [self.imageryDatabase textureCoordsForLatLon:gpos inTile:hgtPage.tile];
-                hgtPixel.x = (width-1) * hgtPixel.x;
-                hgtPixel.y = (height-1) * (1.0-hgtPixel.y);
+                hgtPixel.x = (hgtPage.terrain.size.width-1) * hgtPixel.x;
+                hgtPixel.y = (hgtPage.terrain.size.height-1) * hgtPixel.y;
 
-                // extrude by height
-                unsigned char * pixel = rawData + (bytesPerRow * (int)hgtPixel.y) + (bytesPerPixel * (int)hgtPixel.x);
-                CGFloat red   = pixel[0] / 255.0;
-                CGFloat green = pixel[1] / 255.0;
-                CGFloat blue  = pixel[2] / 255.0;
+                CGPoint p = CGPointMake(hgtPixel.x, hgtPixel.y);
+                UIColor * color = [sampler colorByInterpolatingPixels:p];
+                if ( color == nil ) NSLog(@"Failed to sample: %f %f", hgtPixel.x, hgtPixel.y);
+
                 
-                float height = 0.005 * ( red + green + blue );
-                ecef = GLKVector3Add( ecef, GLKVector3MultiplyScalar(normal, height) );
+                GLKVector3 normal = GLKVector3Normalize(ecef);
+                CGFloat r, g, b, a;
+                if ( [color getRed:&r green:&g blue:&b alpha:&a] ) {
+                    // extrude by height
+                    float height = 0.015f * ( r + g + b ) / 3.0f;
+                    ecef = GLKVector3Add( ecef, GLKVector3MultiplyScalar(normal, height) );
+                }
             }
-                        
+            
             // fill vertex data
             vertexData[vertexDataPos+0] = ecef.x;
             vertexData[vertexDataPos+1] = ecef.y;
@@ -208,7 +193,6 @@
     NSAssert( indexDataPos == 6*(gridSize-1)*(gridSize-1), @"didn't fill index array" );
 
     vertexDataPos = 0;
-    indexDataPos = 0;
     
     // calculate normals
     for( unsigned int gy = 0; gy < gridSize; gy++ ) {
@@ -248,77 +232,67 @@
     [geom setObjectData:vertexData withSize:vertexDataSize withStride:(8*sizeof(GLfloat))];
     [geom setIndexData:indexData withSize:indexDataSize withStride:sizeof(GLushort)];
     
-    if ( rawData ) free( rawData );
+    free( vertexData );
+    free( indexData );
 }
 
 - (void)updatePageIfNeeded:(RAPage *)page {
     NSAssert( page != nil, @"the requested page must be valid");
 
     if ( page.needsUpdate == YES && page.updatePageOp == nil ) {
-        __block NSBlockOperation * op = [NSBlockOperation blockOperationWithBlock:^{
-            if ( op.isCancelled ) return;
-            
-            [EAGLContext setCurrentContext: self.auxilliaryContext];
-            
-            RAGeometry * geometry = page.geometry;
-            
-            // build geometry if needed
-            if ( geometry == nil )
-                geometry = [self createGeometryForTile:page.tile];
-
-            // find an ancestor tile with a valid texture
-            RAPage * imgAncestor = page;
-            while( imgAncestor ) {
-                // texture valid? use this page
-                if ( imgAncestor.imagery ) break;
-                
-                imgAncestor = imgAncestor.parent;
-            }
+        RAGeometry * geometry = page.geometry;
         
-            RAPage * hgtAncestor = page;
-            while( hgtAncestor ) {
-                // terrain valid? use this page
-                if ( hgtAncestor.terrain ) break;
-                
-                hgtAncestor = hgtAncestor.parent;
-            }
-                        
-            if ( imgAncestor ) {
-                // recycle texture with appropriate tex coords
-                [self setupGeometry:geometry forPage:page withTextureFromPage:imgAncestor withHeightFromPage:hgtAncestor];
-                geometry.texture0 = imgAncestor.imagery;
-            } else {
-                // show grid if necessary
-                [self setupGeometry:geometry forPage:page withTextureFromPage:page withHeightFromPage:hgtAncestor];
-                geometry.texture0 = _defaultTexture;
-            }
+        // build geometry if needed
+        if ( geometry == nil ) {
+            geometry = [self createGeometryForTile:page.tile];
+        }
+        
+        // find an ancestor tile with a valid texture
+        RAPage * imgAncestor = page;
+        while( imgAncestor ) {
+            // texture valid? use this page
+            if ( imgAncestor.imagery ) break;
             
-            //[geometry setupGL];
-            [EAGLContext setCurrentContext: nil];
-
-            if ( page.geometry == nil )
-                page.geometry = geometry;
-                
-            page.needsUpdate = NO;
-            page.updatePageOp = nil;
-        }];
-        page.updatePageOp = op;
-        [_graphicsQueue addOperation:op];
+            imgAncestor = imgAncestor.parent;
+        }
+    
+        RAPage * hgtAncestor = page;
+        while( hgtAncestor ) {
+            // terrain valid? use this page
+            if ( hgtAncestor.terrain ) break;
+            
+            hgtAncestor = hgtAncestor.parent;
+        }
+                    
+        if ( imgAncestor ) {
+            // recycle texture with appropriate tex coords
+            [self setupGeometry:geometry forPage:page withTextureFromPage:imgAncestor withHeightFromPage:hgtAncestor];
+            geometry.texture0 = imgAncestor.imagery;
+        } else {
+            // show grid if necessary
+            [self setupGeometry:geometry forPage:page withTextureFromPage:page withHeightFromPage:hgtAncestor];
+            geometry.texture0 = _defaultTexture;
+        }
+        
+        if ( page.geometry == nil )
+            page.geometry = geometry;
+            
+        page.needsUpdate = NO;
     }
 }
 
 - (void)requestPage:(RAPage *)page {
     NSAssert( page != nil, @"the requested page must be valid");
     
+    // !!! still a memory leak here...
+                
     // request the tile image if needed
     if ( page.imagery == nil && page.imageryLoadOp == nil && self.imageryDatabase ) {
         NSURL * url = [self.imageryDatabase urlForTile: page.tile];
         NSURLRequest * request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestReturnCacheDataElseLoad timeoutInterval:15.0];
         
-        if ( url && request ) {
-            __block NSBlockOperation * op = [NSBlockOperation blockOperationWithBlock:^{
-                if ( op.isCancelled ) return;
-                
+        if ( url && request && _loadQueue.operationCount < 16 ) {
+            NSBlockOperation * op = [NSBlockOperation blockOperationWithBlock:^{
                 NSURLResponse * response = nil;
                 NSError * error = nil;
                 NSData * data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];
@@ -334,14 +308,12 @@
                     image = [UIImage imageWithData:UIImageJPEGRepresentation(image, 1.0)];
                     if ( image == nil ) return;
                     
-                    __block NSBlockOperation * op2 = [NSBlockOperation blockOperationWithBlock:^{
-                        if ( op2.isCancelled ) return;
-                        NSError * error = nil;
-                        
+                    @synchronized(self.auxilliaryContext) {
                         [EAGLContext setCurrentContext: self.auxilliaryContext];
 
                         // create texture
                         GLKTextureInfo * textureInfo = nil;
+                        NSError * error = nil;
                         NSDictionary * options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:GLKTextureLoaderOriginBottomLeft];
                         textureInfo = [GLKTextureLoader textureWithCGImage:image.CGImage options:options error:&error];
                         if ( error ) {
@@ -352,30 +324,24 @@
                             page.imagery = texture;
                             page.needsUpdate = YES;
                         }
-
+                        
+                        glFlush();
                         [EAGLContext setCurrentContext: nil];
-                        page.imageryLoadOp = nil;   // !!! necessary?
-                    }];
-                    page.imageryLoadOp = op2;
-                    [_graphicsQueue addOperation:op2];
+                    }
                 }
             }];
             page.imageryLoadOp = op;
-            [_urlLoadingQueue addOperation:op];
+            [_loadQueue addOperation:op];
         }
     }
     
     // request the terrain if needed
     if ( page.terrain == nil && page.terrainLoadOp == nil && self.terrainDatabase ) {
         NSURL * url = [self.terrainDatabase urlForTile: page.tile];
-        NSURLRequest * request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestReturnCacheDataElseLoad timeoutInterval:15.0];
         
-        // !!! if url is invalid (i.e. if beyond the max zoom level) then we will repeatedly try to load it!
-        
-        if ( url && request ) {
-            __block NSBlockOperation * op = [NSBlockOperation blockOperationWithBlock:^{
-                if ( op.isCancelled ) return;
-                
+        if ( url && _loadQueue.operationCount < 16 ) {
+            NSBlockOperation * op = [NSBlockOperation blockOperationWithBlock:^{
+                NSURLRequest * request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestReturnCacheDataElseLoad timeoutInterval:15.0];
                 NSURLResponse * response = nil;
                 NSError * error = nil;
                 NSData * data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];
@@ -392,11 +358,9 @@
                     page.terrain = image;
                     page.needsUpdate = YES;
                 }
-                
-                page.terrainLoadOp = nil;   // !!! necessary?
             }];
             page.terrainLoadOp = op;
-            [_urlLoadingQueue addOperation:op];
+            [_loadQueue addOperation:op];
         }
     }
 }
@@ -425,11 +389,13 @@
     if ( page.child4 == nil ) page.child4 = [self makeLeafPageForTile:(TileID){ 2*page.tile.x+1, 2*page.tile.y+1, page.tile.z+1 } withParent:page];
 }
 
-- (void)traversePage:(RAPage *)page collectActivePages:(NSMutableSet *)activeSet {
+- (void)traversePage:(RAPage *)page {
     NSAssert( page != nil, @"the traversed page must be valid");
-        
+    [self requestPage: page];
+    [self updatePageIfNeeded: page];
+    
     // is the page facing away from the camera?
-    if ( [page calculateTiltWithCamera:self.camera] < -0.5f ) return;
+    //if ( [page calculateTiltWithCamera:self.camera] < -0.5f ) goto pruneChildren;
     
     float texelError = 0.0f;
     if ( page.tile.z <= self.imageryDatabase.maxzoom ) // force display at maximum level
@@ -438,30 +404,29 @@
     // should we choose to display this page?
     if ( texelError < 3.f ) {
         // don't bother traversing if we are offscreen
-        if ( ! [page isOnscreenWithCamera:self.camera] ) return;
+        if ( ! [page isOnscreenWithCamera:self.camera] ) goto pruneChildren;
         
-        [self requestPage: page];
-        [self updatePageIfNeeded: page];
-        [activeSet addObject:page];
-        
-        // prune children
-        // !!! [page.child1.imageryLoadOp cancel]; ...
-        page.child1 = page.child2 = page.child3 = page.child4 = nil;
-        return;
+        //[self requestPage: page];
+        //[self updatePageIfNeeded: page];
+        goto pruneChildren;
     }
 
     // traverse children
     [self preparePageForTraversal:page];
-
-    [self traversePage: page.child1 collectActivePages:activeSet];
-    [self traversePage: page.child2 collectActivePages:activeSet];
-    [self traversePage: page.child3 collectActivePages:activeSet];
-    [self traversePage: page.child4 collectActivePages:activeSet];
+    
+    [self traversePage: page.child1];
+    [self traversePage: page.child2];
+    [self traversePage: page.child3];
+    [self traversePage: page.child4];
+    return;
+    
+pruneChildren:
+    // prune children
+    page.child1 = page.child2 = page.child3 = page.child4 = nil;  // !!! replace this with another method
+    return;
 }
 
 - (void)update {
-    // this is the only method where the GL context is valid!
-    
     // load default texture
     if ( _defaultTexture == nil ) {
         UIImage * image = [UIImage imageNamed:@"grid256"];
@@ -474,67 +439,46 @@
         _defaultTexture = [[RATextureWrapper alloc] initWithTextureInfo:textureInfo];
     }
     
-    /*
-    if ( _overlayTexture == nil ) {
-        UIImage * image = [UIImage imageNamed:@"clear256"];
-        
-        NSError * err = nil;
-        NSDictionary * options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:GLKTextureLoaderOriginBottomLeft];
-        GLKTextureInfo * textureInfo = [GLKTextureLoader textureWithCGImage:[image CGImage] options:options error:&err];
-        if ( err ) NSLog(@"Error loading overlay texture: %@", err);
-        
-        _overlayTexture = [[RATextureWrapper alloc] initWithTextureInfo:textureInfo];
+    if ( _traverseOp == nil ) {
+        _traverseOp = [NSBlockOperation blockOperationWithBlock:^{
+            // traverse pages gathering ones that are active and should be displayed
+            [rootPages enumerateObjectsUsingBlock:^(RAPage *page, BOOL *stop) {
+                [self traversePage:page];
+            }];
+        }];
+        [_traverseQueue addOperation:_traverseOp];
     }
-    */
     
-    //NSMutableSet * currentPages = [[NSMutableSet alloc] init];
+    //NSLog(@"Ops: %d traverse, %d url loading, %d graphics updates", _traverseQueue.operationCount, _loadQueue.operationCount, _graphicsQueue.operationCount);
+    //NSLog(@"Total count: Page %d, Geom %d", [RAPage count], [RAGeometry count]);
     
-    // traverse pages gathering ones that are active and should be displayed
+    //[self printPageTree];
+}
+
+static NSUInteger sTraverseCount = 0;
+
+- (void)printPage:(RAPage *)page withIndent:(int)indent {
+    sTraverseCount++;
+    
+    NSMutableString * indentString = [NSMutableString string];
+    for( int i = 0; i < indent; ++i )
+        [indentString appendString:@"  "];
+    
+    //NSLog(@"%@Tile: %@, Geom: %@", indentString, page.key, page.geometry);
+    
+    if ( page.child1 ) [self printPage:page.child1 withIndent:indent+1];
+    if ( page.child2 ) [self printPage:page.child2 withIndent:indent+1];
+    if ( page.child3 ) [self printPage:page.child3 withIndent:indent+1];
+    if ( page.child4 ) [self printPage:page.child4 withIndent:indent+1];
+}
+
+- (void)printPageTree {
+    sTraverseCount = 0;
+    //NSLog(@"Page Tree:");
     [rootPages enumerateObjectsUsingBlock:^(RAPage *page, BOOL *stop) {
-        [self traversePage:page collectActivePages:nil];    // !!! currentPages
+        [self printPage:page withIndent:1];
     }];
-    
-    //NSLog(@"Ops: %d urls loading, %d graphics updates", _urlLoadingQueue.operationCount, _graphicsQueue.operationCount);
-    
-    /*
-    @synchronized(self) {
-        NSMutableSet * insertPages = [currentPages mutableCopy];
-        [insertPages minusSet: _activePages];
-        
-        NSMutableSet * removePages = [_activePages mutableCopy];
-        [removePages minusSet: currentPages];
-        
-        _insertPages = insertPages;
-        _removePages = removePages;
-        _activePages = currentPages;
-    }
-    
-    @synchronized(self) {
-        //NSLog(@"Active: %d, Insert: %d, Remove: %d", _activePages.count, _insertPages.count, _removePages.count);
-        
-        // add new pages
-        [_insertPages enumerateObjectsUsingBlock:^(RAPage * page, BOOL *stop) {
-            [rootNode addChild: page.geometry];
-        }];
-        
-        // remove pages from scene graph
-        [_removePages enumerateObjectsUsingBlock:^(RAPage *page, BOOL *stop) {
-            [rootNode removeChild: page.geometry];
-            [page.geometry releaseGL];
-            
-            // delete the page data if not a root page
-            if ( ! [rootPages containsObject:page] ) {
-                page.geometry = nil;
-                page.needsUpdate = YES;
-            }
-        }];
-        
-        _insertPages = nil;
-        _removePages = nil;
-    }
-     */
-    
-    [RATextureWrapper cleanup];
+    NSLog(@"Traversed: %d, Total: %d", sTraverseCount, [RAPage count]);
 }
 
 @end

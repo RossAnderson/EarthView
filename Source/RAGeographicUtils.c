@@ -37,6 +37,22 @@ const GLKMatrix4 kEllipsoidToUnitSphere = {
 const double DEG_TO_RAD = M_PI / 180.;
 const double RAD_TO_DEG = 180. / M_PI;
 
+double NormalizeLatitude( double deg )
+{
+    // latitude is capped to max
+    if ( deg < -90. ) deg = -90.;
+    if ( deg >  90. ) deg =  90.;
+    return deg;
+}
+
+double NormalizeLongitude( double deg )
+{
+    // longitude wraps around
+    while( deg < -180. ) deg +=  360.;
+    while( deg >  180. ) deg += -360.;
+    return deg;
+}
+
 double ConvertHeightToEcef( double height ) {
     return height * kEcefScale;
 }
@@ -98,8 +114,7 @@ RAPolarCoordinate ConvertEcefToPolar( GLKVector3 ecef )
     polar.height *= 1./kEcefScale;
     
     // normalize
-    if ( polar.latitude < 0.0 ) polar.latitude += 360.;
-    if ( polar.longitude < 0.0 ) polar.longitude += 360.;
+    //polar.longitude = NormalizeLongitude(polar.longitude);
     
     return polar;
 }

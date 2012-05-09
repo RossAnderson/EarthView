@@ -18,6 +18,7 @@
 #import "RAManipulator.h"
 #import "RATileDatabase.h"
 #import "RATilePager.h"
+#import "RAWorldTour.h"
 
 
 #pragma mark -
@@ -51,10 +52,11 @@
 @interface RASceneGraphController () {
     RARenderVisitor *   renderVisitor;
     RAManipulator *     manipulator;
+    RAWorldTour *       tourController;
     
     EAGLContext *       context;
     //GLKBaseEffect *     effect;
-    GLKSkyboxEffect *   skybox;
+    //GLKSkyboxEffect *   skybox;
 }
 
 - (void)setupGL;
@@ -72,6 +74,9 @@
 {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
+        // !!! why does this cause gestures to fail?
+        //self.preferredFramesPerSecond = 60;
+        
         _camera = [RACamera new];
         _camera.projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(65.0f), 1, 1, 100);
         _camera.modelViewMatrix = GLKMatrix4Identity;
@@ -119,6 +124,14 @@
     // create another context for threaded operations
     self.pager.auxilliaryContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:[context sharegroup]];
     
+    // add world tour
+    tourController = [RAWorldTour new];
+    tourController.manipulator = manipulator;
+
+    UITapGestureRecognizer * recognizer = [[UITapGestureRecognizer alloc] initWithTarget:tourController action:@selector(startOrStop:)];
+	[recognizer setNumberOfTapsRequired:4];
+	[self.view addGestureRecognizer:recognizer];
+
     [self.pager setup];
     [self setupGL];
 }
@@ -239,10 +252,7 @@
     glEnable(GL_BLEND);
     glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
     
-    /*effect = [[GLKBaseEffect alloc] init];
-    effect.label = @"Base Effect";
-    effect.light0.enabled = GL_TRUE;*/
-    
+    /*
     // setup skybox
     NSString * starPath = [[NSBundle mainBundle] pathForResource:@"star1" ofType:@"png"];
     NSArray * starPaths = [NSArray arrayWithObjects: starPath, starPath, starPath, starPath, starPath, starPath, nil];
@@ -257,6 +267,7 @@
     skybox.textureCubeMap.name = starTexture.name;
     
     NSLog(@"sky = %d, err = %@", starTexture.name, error);
+    */
     
     // set as scene
     _sceneRoot = [self createBlueMarble];
@@ -310,21 +321,21 @@
     self.camera.projectionMatrix = projectionMatrix;
     self.camera.viewport = self.view.bounds;
     
-    skybox.transform.projectionMatrix = projectionMatrix;
-    skybox.transform.modelviewMatrix = self.camera.modelViewMatrix;
+    //skybox.transform.projectionMatrix = projectionMatrix;
+    //skybox.transform.modelviewMatrix = self.camera.modelViewMatrix;
 
     [self.pager update];
 }
 
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect
 {
-    glClearColor(0.0f, 0.2f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(0.0f, 0.2f, 0.0f, 1.0f);
     
     // render the skybox
     //glDisable(GL_DEPTH_TEST);
-    [skybox prepareToDraw];
-    [skybox draw];
+    //[skybox prepareToDraw];
+    //[skybox draw];
     //glEnable(GL_DEPTH_TEST);
     
     // run the render visitor
@@ -344,6 +355,9 @@
         case GL_OUT_OF_MEMORY:      NSLog(@"glGetError: out of memory");        break;
         default:        NSLog(@"glGetError: unknown error = 0x%04X", err);      break;
     }
+
+    [RATextureWrapper cleanup];
+    [RAGeometry cleanup];
 }
 
 @end

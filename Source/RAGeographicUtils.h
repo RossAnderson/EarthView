@@ -22,6 +22,9 @@ typedef struct {
     double height;      // above ellipsoid
 } RAPolarCoordinate;
 
+double NormalizeLatitude( double deg );
+double NormalizeLongitude( double deg );
+
 double ConvertHeightToEcef( double height );
 double ConvertEcefToHeight( double length );
 double ConvertHeightAboveGroundToEcef( double height );

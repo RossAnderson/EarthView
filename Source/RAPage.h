@@ -21,7 +21,7 @@
 @property (readonly, nonatomic) NSString * key;
 @property (readonly, nonatomic) RABoundingSphere * bound;
 
-@property (readonly, nonatomic) RAPage * parent;
+@property (readonly, weak, nonatomic) RAPage * parent;
 @property (strong, nonatomic) RAPage * child1;
 @property (strong, nonatomic) RAPage * child2;
 @property (strong, nonatomic) RAPage * child3;
@@ -37,9 +37,13 @@
 @property (weak, atomic) NSOperation * terrainLoadOp;
 @property (weak, atomic) NSOperation * updatePageOp;
 
++ (NSUInteger)count;
+
 - (RAPage *)initWithTileID:(TileID)t andParent:(RAPage *)parent;
 
 - (void)setCenter:(GLKVector3)center andRadius:(double)radius;
+
+- (void)cancelOps;
 
 - (float)calculateTiltWithCamera:(RACamera *)camera;
 - (float)calculateScreenSpaceErrorWithCamera:(RACamera *)camera;

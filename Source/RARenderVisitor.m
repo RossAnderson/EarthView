@@ -175,9 +175,11 @@ enum
     [self traversePage: node.page];
 }
 
-- (void)traversePage:(RAPage *)page {
+- (bool)traversePage:(RAPage *)page {
+    if ( page == nil ) return NO;
+    
     // is the page facing away from the camera?
-    if ( [page calculateTiltWithCamera:self.camera] < -0.5f ) return;
+    if ( page.tile.z > 2 && [page calculateTiltWithCamera:self.camera] < 0.0f ) return YES;
     
     float texelError = 0.0f;
     texelError = [page calculateScreenSpaceErrorWithCamera:self.camera];
@@ -185,26 +187,32 @@ enum
     // should we choose to display this page?
     if ( texelError < 3.f && page.geometry ) {
         // don't bother traversing if we are offscreen
-        if ( ! [page isOnscreenWithCamera:self.camera] ) return;
+        if ( ! [page isOnscreenWithCamera:self.camera] ) return YES;
         
         [self applyGeometry: page.geometry];
-        return;
+        return YES;
     }
     
-    // are the children available?
-    if ( page.child1.geometry && page.child2.geometry && page.child3.geometry && page.child4.geometry ) {
-        // traverse children
+    BOOL success = YES;
+    
+    // !!! this doesn't work well because it can't skip to grandchildren
+    success = ( page.child1.geometry && page.child2.geometry && page.child3.geometry && page.child4.geometry );
+    
+    // traverse children
+    if ( success ) {
         [self traversePage: page.child1];
         [self traversePage: page.child2];
         [self traversePage: page.child3];
         [self traversePage: page.child4];
     } else {
         // don't bother traversing if we are offscreen
-        if ( ! [page isOnscreenWithCamera:self.camera] ) return;
+        if ( ! [page isOnscreenWithCamera:self.camera] ) return YES;
         
         [self applyGeometry: page.geometry];
-        return;
+        return YES;
     }
+    
+    return success;
 }
 
 

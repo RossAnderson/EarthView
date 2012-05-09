@@ -10,8 +10,6 @@
 
 #import "TPPropertyAnimation.h"
 
-//#define ENABLE_DEBUG_GESTURES
-
 static const RAPolarCoordinate kFreshPondCoord = { 42.384733, -71.149392, 1e7 };
 static const RAPolarCoordinate kPolarNone = { -1, -1, -1 };
 static const RAPolarCoordinate kPolarZero = { 0, 0, 0 };
@@ -19,7 +17,6 @@ static const RAPolarCoordinate kDefaultVelocity = { 0, -10, 0 };
 
 static const CGFloat kAnimationDuration = 1.0f;
 static const CGFloat kMinimumAnimatedAngle = 2.0f;
-static const double kMaximumLatitude = 85.;
 
 
 typedef struct {
@@ -81,18 +78,11 @@ typedef enum {
 	[zoomRecognizer setNumberOfTapsRequired:2];
 	[zoomRecognizer setDelegate:self];
 	[view addGestureRecognizer:zoomRecognizer];
-    
+        
 	UITapGestureRecognizer * stopRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(stop:)];
 	[stopRecognizer setNumberOfTapsRequired:1];
 	[stopRecognizer setDelegate:self];
 	[view addGestureRecognizer:stopRecognizer];
-    
-#ifdef ENABLE_DEBUG_GESTURES
-	UITapGestureRecognizer * worldTourRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(debugWorldTour:)];
-	[worldTourRecognizer setNumberOfTapsRequired:4];
-	[worldTourRecognizer setDelegate:self];
-	[view addGestureRecognizer:worldTourRecognizer];
-#endif
 }
 
 - (double)latitude {
@@ -101,8 +91,8 @@ typedef enum {
 
 - (void)setLatitude:(double)latitude {
     NSAssert( !isnan(latitude), @"angle cannot be NAN" );
-    latitude = fmod( latitude, 360. );
-    _state.latitude = latitude;
+    
+    _state.latitude = NormalizeLatitude(latitude);
 }
 
 - (double)longitude {
@@ -111,10 +101,8 @@ typedef enum {
 
 - (void)setLongitude:(double)longitude {
     NSAssert( !isnan(longitude), @"angle cannot be NAN" );
-    longitude = fmod( longitude, 360. );
-    if ( longitude < 0.0 ) longitude += 360.;
     
-    _state.longitude = longitude;
+    _state.longitude = NormalizeLongitude(longitude);
 }
 
 - (double)azimuth {
@@ -123,8 +111,8 @@ typedef enum {
 
 - (void)setAzimuth:(double)azimuth {
     NSAssert( !isnan(azimuth), @"angle cannot be NAN" );
-    azimuth = fmod( azimuth, 360. );
-    _state.azimuth = azimuth;
+
+    _state.azimuth = NormalizeLongitude(azimuth);
 }
 
 - (double)elevation {
@@ -133,8 +121,9 @@ typedef enum {
 
 - (void)setElevation:(double)elevation {
     NSAssert( !isnan(elevation), @"angle cannot be NAN" );
-    if ( elevation < 0 ) elevation = 0;
-    if ( elevation > 90 ) elevation = 90;
+    if ( elevation <  0. ) elevation =  0.;
+    if ( elevation > 90. ) elevation = 90.;
+    
     _state.elevation = elevation;
 }
 
@@ -145,6 +134,8 @@ typedef enum {
 - (void)setDistance:(double)distance {
     NSAssert( !isnan(distance), @"distance cannot be NAN" );
     if ( distance < 200. ) distance = 200.;
+    if ( distance > 1.e7 ) distance = 1.e7;
+    
     _state.distance = distance;
 }
 
@@ -330,9 +321,6 @@ typedef enum {
                         self.latitude -= lat - cursorLatitude;
                         self.longitude -= lon - cursorLongitude;
                         
-                        if ( _state.latitude > kMaximumLatitude ) self.latitude = kMaximumLatitude;
-                        if ( _state.latitude < -kMaximumLatitude ) self.latitude = -kMaximumLatitude;
-                        
                         //NSLog(@"lat = %f, lon = %f", _state.latitude, _state.longitude);
                     }
                     break;
@@ -384,8 +372,7 @@ typedef enum {
                 {
                     // continue movement in the same direction
                     CGPoint dir = CGPointMake( _state.longitude - startState.longitude, _state.latitude - startState.latitude );
-                    if ( dir.x > 180. ) dir.x -= 360.;
-                    if ( dir.x < -180. ) dir.x += 360.;
+                    dir.x = NormalizeLongitude(dir.x);
 
                     CGFloat length = sqrt( dir.x*dir.x + dir.y*dir.y );
                     if ( length < 1 ) break;
@@ -398,8 +385,6 @@ typedef enum {
                     if ( fabs(angle) < kMinimumAnimatedAngle ) break;
                     
                     CGPoint destination = CGPointMake( _state.longitude + dir.x*angle, _state.latitude + dir.y*angle );
-                    /*if ( destination.y > kMaximumLatitude ) destination.y = kMaximumLatitude;
-                    if ( destination.y < -kMaximumLatitude ) destination.y = -kMaximumLatitude;*/
                     
                     // zoom to that location
                     TPPropertyAnimation *anim = [TPPropertyAnimation propertyAnimationWithKeyPath:@"latitude"];
@@ -462,7 +447,7 @@ typedef enum {
     // get the current touch position on the globe
     [self intersectPoint:pt atLatitude:&lat atLongitude:&lon withState:_state];
     
-    //printf("Zoom to: %f, %f\n", lat, lon);
+    //printf("Zoom from %f %f to: %f %f\n", _state.latitude, _state.longitude, lat, lon);
     
     double duration = 1.0;
 
@@ -487,8 +472,37 @@ typedef enum {
     anim.toValue = [NSNumber numberWithDouble:_state.distance / 2.0];
     anim.timing = TPPropertyAnimationTimingEaseInEaseOut;
     [anim beginWithTarget:self];
+}
+
+
+- (void)debugZoomInOut:(id)sender {
+    double duration = 5.0;
+    [self stop: nil];
     
-    //NSLog(@"Zoom from %@ to %@", anim.fromValue, anim.toValue);
+    TPPropertyAnimation *anim1 = [TPPropertyAnimation propertyAnimationWithKeyPath:@"distance"];
+    anim1.target = self;
+    anim1.duration = duration;
+    anim1.fromValue = [NSNumber numberWithDouble:_state.distance];
+    anim1.toValue = [NSNumber numberWithDouble:2000];
+    anim1.timing = TPPropertyAnimationTimingEaseInEaseOut;
+
+    TPPropertyAnimation *anim2 = [TPPropertyAnimation propertyAnimationWithKeyPath:@"distance"];
+    anim2.target = self;
+    anim2.duration = duration;
+    anim2.fromValue = [NSNumber numberWithDouble:2000];
+    anim2.toValue = [NSNumber numberWithDouble:1000];
+    anim2.timing = TPPropertyAnimationTimingEaseInEaseOut;
+    
+    TPPropertyAnimation *anim3 = [TPPropertyAnimation propertyAnimationWithKeyPath:@"distance"];
+    anim3.target = self;
+    anim3.duration = duration;
+    anim3.fromValue = [NSNumber numberWithDouble:1000];
+    anim3.toValue = [NSNumber numberWithDouble:_state.distance];
+    anim3.timing = TPPropertyAnimationTimingEaseInEaseOut;
+
+    anim1.chainedAnimation = anim2;
+    anim2.chainedAnimation = anim3;
+    [anim1 beginWithTarget:self];
 }
 
 - (void)debugWorldTour:(id)sender {

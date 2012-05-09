@@ -17,12 +17,57 @@
 #import "RABoundingSphere.h"
 
 #define BUFFER_INVALID ((GLuint)-1)
+#define kMaxDeleteBatchSize (8)
+
+
+@interface GLBufferSet : NSObject
+@property (assign) GLuint vertexArray;
+@property (assign) GLuint vertexBuffer;
+@property (assign) GLuint indexBuffer;
+@end
+@implementation GLBufferSet
+@synthesize vertexArray=_vertexArray, vertexBuffer=_vertexBuffer, indexBuffer=_indexBuffer;
+
+- (id)init
+{
+    self = [super init];
+    if (self) {
+        _vertexArray = BUFFER_INVALID;
+        _vertexBuffer = BUFFER_INVALID;
+        _indexBuffer = BUFFER_INVALID;
+    }
+    return self;
+}
+
+- (void)generateAndBind {
+    if ( _vertexArray == BUFFER_INVALID )
+        glGenVertexArraysOES(1, &_vertexArray);
+    glBindVertexArrayOES(_vertexArray);
+    
+    if ( _vertexBuffer == BUFFER_INVALID )
+        glGenBuffers(1, &_vertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
+    
+    if ( _indexBuffer == BUFFER_INVALID )
+        glGenBuffers(1, &_indexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
+}
+
+- (void)releaseGL {
+    if ( _vertexBuffer != BUFFER_INVALID ) glDeleteBuffers(1, &_vertexBuffer);
+    if ( _indexBuffer != BUFFER_INVALID ) glDeleteBuffers(1, &_indexBuffer);
+    if ( _vertexArray != BUFFER_INVALID ) glDeleteVertexArraysOES(1, &_vertexArray);
+    
+    _vertexBuffer = BUFFER_INVALID;
+    _indexBuffer = BUFFER_INVALID;
+    _vertexArray = BUFFER_INVALID;
+}
+@end
 
 
 @implementation RAGeometry {
-    GLuint          _vertexArray;
-    GLuint          _vertexBuffer;
-    GLuint          _indexBuffer;
+    GLBufferSet *   _buffers;
+    NSString *      _contextKey;
     
     NSMutableData * _vertexData;
     GLint           _vertexStride;
@@ -46,14 +91,56 @@
 @synthesize elementStyle = _elementStyle;
 
 
++ (NSMutableDictionary *)geometrySetDictionary {
+    static NSMutableDictionary * dict = nil;
+    if ( dict == nil ) dict = [NSMutableDictionary dictionary];
+    return dict;
+}
+
++ (NSMutableSet *)geometrySetForKey:(NSString *)key {
+    // get or create a set for this context
+    NSMutableDictionary * dict = [[self class] geometrySetDictionary];
+    NSMutableSet * set = [dict objectForKey:key];
+    if ( !set ) {
+        set = [NSMutableSet set];
+        [dict setValue:set forKey:key];
+    }
+    return set;
+}
+
++ (void)cleanup {
+    EAGLContext * context = [EAGLContext currentContext];
+    NSAssert( context, @"OpenGL ES context must be valid!" );
+    
+    NSString * key = [context description];
+    NSMutableSet * set = [self geometrySetForKey:key];
+    
+    NSUInteger count = 0;
+    
+    @synchronized (set) {
+        if ( [set count] < 1 ) return;
+                
+        while( count < kMaxDeleteBatchSize && [set count] ) {
+            GLBufferSet * buffer = [set anyObject];
+            [set removeObject:buffer];
+            
+            // delete buffers
+            [buffer releaseGL];
+            
+            count++;
+        }
+    }
+    
+    // check for errors
+    GLenum err = glGetError();
+    if ( err != GL_NO_ERROR )
+        NSLog(@"+[RATextureWrapper cleanup]: glGetError = %d", err);
+}
+
 - (id)init
 {
     self = [super init];
     if (self) {
-        _vertexArray = BUFFER_INVALID;
-        _vertexBuffer = BUFFER_INVALID;
-        _indexBuffer = BUFFER_INVALID;
-        
         _vertexStride = 0;
         _indexStride = 0;
         
@@ -68,6 +155,18 @@
         _vertexDataDirty = _indexDataDirty = YES;
     }
     return self;
+}
+
+- (void)dealloc
+{
+    if ( _buffers && _contextKey ) {
+        NSMutableSet * set = [[self class] geometrySetForKey:_contextKey];
+
+        @synchronized (set) {
+            // mark for cleanup
+            [set addObject:_buffers];
+        }
+    }
 }
 
 - (SEL)visitorSelector
@@ -118,7 +217,11 @@
     NSAssert( stride > 0, @"stride must be non-zero" );
     
     @synchronized(self) {
-        _vertexData = [NSMutableData dataWithBytes:data length:length];
+        if ( [_vertexData length] == length ) {
+            memcpy( [_vertexData mutableBytes], data, length );
+        } else {
+            _vertexData = [NSMutableData dataWithBytes:data length:length];
+        }
         _vertexStride = stride;
 
         // force re-gen of vertex buffer
@@ -133,7 +236,11 @@
     NSAssert( stride > 0, @"stride must be non-zero" );
 
     @synchronized(self) {
-        _indexData = [NSMutableData dataWithBytes:data length:length];
+        if ( [_indexData length] == length ) {
+            memcpy( [_indexData mutableBytes], data, length );
+        } else {
+            _indexData = [NSMutableData dataWithBytes:data length:length];
+        }
         _indexStride = stride;
         
         // force re-gen of index buffer
@@ -148,41 +255,24 @@
     NSAssert( [EAGLContext currentContext], @"must be called with an active context" );
     
     @synchronized(self) {
-        // remove old vertex buffers if necessary
-        if ( _vertexDataDirty && _vertexBuffer != BUFFER_INVALID ) {
-            glDeleteBuffers(1, &_vertexBuffer);
-            _vertexBuffer = BUFFER_INVALID;
+        if ( _buffers == nil ) {
+            EAGLContext * context = [EAGLContext currentContext];
+
+            _buffers = [GLBufferSet new];
+            _contextKey = [context description];
+        }
+        [_buffers generateAndBind];
+        
+        // set vertex data
+        if ( _vertexDataDirty && _vertexData && _vertexStride > 0 ) {
+            glBufferData(GL_ARRAY_BUFFER, [_vertexData length], [_vertexData bytes], GL_STATIC_DRAW);
             _vertexDataDirty = NO;
         }
         
-        if ( _indexDataDirty && _indexBuffer != BUFFER_INVALID ) {
-            glDeleteBuffers(1, &_indexBuffer);
-            _indexBuffer = BUFFER_INVALID;
-            _indexDataDirty = NO;
-        }
-
-        // create vertex array if needed
-        if ( _vertexArray == BUFFER_INVALID ) {
-            glGenVertexArraysOES(1, &_vertexArray);
-        }
-        
-        glBindVertexArrayOES(_vertexArray);
-        
-        // create and setup data buffers
-        if ( _vertexBuffer == BUFFER_INVALID && _vertexData && _vertexStride > 0 ) {
-            glGenBuffers(1, &_vertexBuffer);
-            glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
-            glBufferData(GL_ARRAY_BUFFER, [_vertexData length], [_vertexData bytes], GL_STATIC_DRAW);
-        } else {
-            glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
-        }
-        
-        if ( _indexBuffer == BUFFER_INVALID && _indexData && _indexStride > 0 ) {
-            glGenBuffers(1, &_indexBuffer);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
+        // set index data
+        if ( _indexDataDirty && _indexData && _indexStride > 0 ) {
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, [_indexData length], [_indexData bytes], GL_STATIC_DRAW);
-        } else {
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
+            _indexDataDirty = NO;
         }
         
         // set attribute pointers
@@ -212,25 +302,20 @@
         }
 
         glBindVertexArrayOES(0);
-        //glFlush();
     }
 }
 
 - (void)releaseGL
 {
     NSAssert( [EAGLContext currentContext], @"must be called with an active context" );
+    
+    NSLog(@"releaseGL!");
 
     @synchronized(self) {
-        if ( _vertexBuffer != BUFFER_INVALID ) glDeleteBuffers(1, &_vertexBuffer);
-        if ( _indexBuffer != BUFFER_INVALID ) glDeleteBuffers(1, &_indexBuffer);
-        if ( _vertexArray != BUFFER_INVALID ) glDeleteVertexArraysOES(1, &_vertexArray);
+        [_buffers releaseGL];
         
-        _vertexBuffer = BUFFER_INVALID;
-        _indexBuffer = BUFFER_INVALID;
-        _vertexArray = BUFFER_INVALID;
+        _vertexDataDirty = _indexDataDirty = YES;
     }
-    
-    _vertexDataDirty = _indexDataDirty = YES;
 }
 
 - (void)renderGL
@@ -255,7 +340,7 @@
             glBindTexture(GL_TEXTURE_2D, 0);
         }
 
-        glBindVertexArrayOES(_vertexArray);
+        glBindVertexArrayOES(_buffers.vertexArray);
 
         if ( _indexStride > 0 && [_indexData length] > 0 ) {
             GLenum type = -1;

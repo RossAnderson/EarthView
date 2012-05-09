@@ -8,7 +8,12 @@
 
 #import "RATextureWrapper.h"
 
-@implementation RATextureWrapper
+#define kMaxDeleteBatchSize (8)
+
+
+@implementation RATextureWrapper {
+    NSString *  _contextKey;
+}
 
 @synthesize name = _name;
 @synthesize target = _target;
@@ -18,49 +23,54 @@
 @synthesize textureOrigin = _textureOrigin;
 @synthesize containsMipmaps = _containsMipmaps;
 
-+ (NSMutableSet *)cleanupTextureNameSet {
-    static NSMutableSet * set = nil;
-    if ( set == nil ) set = [NSMutableSet set];
++ (NSMutableDictionary *)textureSetDictionary {
+    static NSMutableDictionary * dict = nil;
+    if ( dict == nil ) dict = [NSMutableDictionary dictionary];
+    return dict;
+}
+
++ (NSMutableSet *)textureSetForKey:(NSString *)key {
+    // get or create a set for this context
+    NSMutableDictionary * dict = [[self class] textureSetDictionary];
+    NSMutableSet * set = [dict objectForKey:key];
+    if ( !set ) {
+        set = [NSMutableSet set];
+        [dict setValue:set forKey:key];
+    }
     return set;
 }
 
 + (void)cleanup {
-    // must be called from within a valid OpenGL ES context!
-    NSAssert( [EAGLContext currentContext], @"OpenGL ES context must be valid!" );
+    EAGLContext * context = [EAGLContext currentContext];
+    NSAssert( context, @"OpenGL ES context must be valid!" );
+    
+    NSString * key = [context description];
+    NSMutableSet * set = [self textureSetForKey:key];
     
     GLuint * textureNames = NULL;
-    NSUInteger index = 0;
+    NSUInteger count = 0;
     
-    NSMutableSet * set = [[self class] cleanupTextureNameSet];
     @synchronized (set) {
-        NSUInteger count = [set count];
-        if ( count == 0 ) return;
+        if ( [set count] < 1 ) return;
+
+        textureNames = (GLuint *)alloca( kMaxDeleteBatchSize );
         
-        textureNames = (GLuint *)alloca( count * sizeof(GLuint) );
-        
-        NSEnumerator * nameEnum = [set objectEnumerator];
-        NSNumber * nameValue = nil;
-        
-        while( nameValue = [nameEnum nextObject] ) {
-            textureNames[index] = [nameValue intValue];
-            if ( textureNames[index] > 0 ) index++;
+        while( count < kMaxDeleteBatchSize && [set count] ) {
+            NSNumber * nameValue = [set anyObject];
+            [set removeObject:nameValue];
+            
+            textureNames[count] = [nameValue intValue];
+            count++;
         }
-        NSAssert( index <= count, @"invalid index after enumeration" );
-        
-        [set removeAllObjects];
     }
 
-    if ( index > 0 ) {
-        glDeleteTextures(index, textureNames);
-        //NSLog(@"Deleted %d texture.", index);
+    glDeleteTextures(count, textureNames);
+    NSLog(@"Deleted %d textures.", count);
 
-        /*
-        // check for errors
-        GLenum err = glGetError();
-        if ( err != GL_NO_ERROR )
-            NSLog(@"+[RATextureWrapper cleanup]: glGetError = %d", err);
-        */
-    }
+    // check for errors
+    GLenum err = glGetError();
+    if ( err != GL_NO_ERROR )
+        NSLog(@"+[RATextureWrapper cleanup]: glGetError = %d", err);
 }
 
 - (id)initWithTextureInfo:(GLKTextureInfo *)info {
@@ -73,15 +83,22 @@
         _alphaState = info.alphaState;
         _textureOrigin = info.textureOrigin;
         _containsMipmaps = info.containsMipmaps;
+
+        EAGLContext * context = [EAGLContext currentContext];
+        NSAssert( context, @"OpenGL ES context must be valid!" );
+        _contextKey = [context description];
     }
     return self;
 }
 
 - (void)dealloc {
-    // mark for cleanup
-    NSMutableSet * set = [[self class] cleanupTextureNameSet];
-    @synchronized (set) {
-        if ( _name ) [set addObject:[NSNumber numberWithInt:_name]];
+    if ( _name && _contextKey ) {
+        NSMutableSet * set = [[self class] textureSetForKey:_contextKey];
+
+        // mark for cleanup
+        @synchronized (set) {
+            [set addObject:[NSNumber numberWithInt:_name]];
+        }
     }
 }
 

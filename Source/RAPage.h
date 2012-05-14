@@ -14,6 +14,14 @@
 #import "RACamera.h"
 #import "RATileDatabase.h"
 
+typedef enum {
+    NotLoaded = 0,
+    Loading,
+    Complete,
+    Failed,
+    NeedsUpdate
+} RAPageLoadState;
+
 
 @interface RAPage : NSObject
 
@@ -27,15 +35,16 @@
 @property (strong, nonatomic) RAPage * child3;
 @property (strong, nonatomic) RAPage * child4;
 
+@property (assign, nonatomic) NSTimeInterval lastRequestedTimestamp;
+
+@property (assign, nonatomic) RAPageLoadState geometryState;
 @property (strong, nonatomic) RAGeometry * geometry;
 
+@property (assign, nonatomic) RAPageLoadState imageryState;
 @property (strong, nonatomic) RATextureWrapper * imagery;
-@property (strong, nonatomic) UIImage * terrain;
 
-@property (assign, atomic) BOOL needsUpdate;
-@property (weak, atomic) NSOperation * imageryLoadOp;
-@property (weak, atomic) NSOperation * terrainLoadOp;
-@property (weak, atomic) NSOperation * updatePageOp;
+@property (assign, nonatomic) RAPageLoadState terrainState;
+@property (strong, nonatomic) UIImage * terrain;
 
 + (NSUInteger)count;
 
@@ -43,10 +52,10 @@
 
 - (void)setCenter:(GLKVector3)center andRadius:(double)radius;
 
-- (void)cancelOps;
-
 - (float)calculateTiltWithCamera:(RACamera *)camera;
 - (float)calculateScreenSpaceErrorWithCamera:(RACamera *)camera;
 - (BOOL)isOnscreenWithCamera:(RACamera *)camera;
+
+- (BOOL)isReady;
 
 @end

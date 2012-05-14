@@ -8,7 +8,8 @@
 
 #import "RASceneGraphController.h"
 
-#import <GLKit/GLKTextureLoader.h>
+#import <GLKit/GLKit.h>
+#import <QuartzCore/QuartzCore.h>
 
 #import "RABoundingSphere.h"
 #import "RANodeVisitor.h"
@@ -19,19 +20,6 @@
 #import "RATileDatabase.h"
 #import "RATilePager.h"
 #import "RAWorldTour.h"
-
-
-#pragma mark -
-
-@interface SetupGeometryVisitor : RANodeVisitor
-@end
-
-@implementation SetupGeometryVisitor
-- (void)applyGeometry:(RAGeometry *)node
-{
-    [node setupGL];
-}
-@end
 
 
 #pragma mark -
@@ -50,13 +38,15 @@
 
 
 @interface RASceneGraphController () {
-    RARenderVisitor *   renderVisitor;
-    RAManipulator *     manipulator;
-    RAWorldTour *       tourController;
+    RARenderVisitor *   _renderVisitor;
+    RAManipulator *     _manipulator;
+    RAWorldTour *       _tourController;
     
-    EAGLContext *       context;
-    //GLKBaseEffect *     effect;
-    //GLKSkyboxEffect *   skybox;
+    EAGLContext *       _context;
+    GLKSkyboxEffect *   _skybox;
+    CADisplayLink *     _displayLink;
+    
+    BOOL                _needsDisplay;
 }
 
 - (void)setupGL;
@@ -81,11 +71,11 @@
         _camera.projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(65.0f), 1, 1, 100);
         _camera.modelViewMatrix = GLKMatrix4Identity;
         
-        manipulator = [RAManipulator new];
-        manipulator.camera = self.camera;
+        _manipulator = [RAManipulator new];
+        _manipulator.camera = self.camera;
 
-        renderVisitor = [RARenderVisitor new];
-        renderVisitor.camera = self.camera;
+        _renderVisitor = [RARenderVisitor new];
+        _renderVisitor.camera = self.camera;
 
         RATileDatabase * database = [RATileDatabase new];
         database.bounds = CGRectMake( -180,-90,360,180 );
@@ -100,6 +90,8 @@
         _pager = [RATilePager new];
         _pager.imageryDatabase = database;
         _pager.camera = self.camera;
+        
+        _needsDisplay = YES;
 }
     return self;
 }
@@ -108,29 +100,35 @@
 {
     [super viewDidLoad];
         
-    context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+    _context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
     
-    if (!context) {
+    if (!_context) {
         NSLog(@"Failed to create ES context");
     }
     
     GLKView *view = (GLKView *)self.view;
-    view.context = context;
+    view.context = _context;
+    view.delegate = self;
     view.drawableDepthFormat = GLKViewDrawableDepthFormat24;
     view.drawableMultisample = GLKViewDrawableMultisample4X;
     
-    manipulator.view = self.view;
+    _manipulator.view = self.view;
+    
+    // setup display link to update the view
+    _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(displayLinkUpdate:)];
+    [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
     
     // create another context for threaded operations
-    self.pager.auxilliaryContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:[context sharegroup]];
+    self.pager.auxilliaryContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:[_context sharegroup]];
     
     // add world tour
-    tourController = [RAWorldTour new];
-    tourController.manipulator = manipulator;
+    _tourController = [RAWorldTour new];
+    _tourController.manipulator = _manipulator;
 
-    UITapGestureRecognizer * recognizer = [[UITapGestureRecognizer alloc] initWithTarget:tourController action:@selector(startOrStop:)];
+    UITapGestureRecognizer * recognizer = [[UITapGestureRecognizer alloc] initWithTarget:_tourController action:@selector(startOrStop:)];
 	[recognizer setNumberOfTapsRequired:4];
 	[self.view addGestureRecognizer:recognizer];
+    //[tourController start: self];
 
     [self.pager setup];
     [self setupGL];
@@ -141,17 +139,21 @@
     [super viewDidUnload];
     
     [self tearDownGL];
+    [_displayLink invalidate];
     
-    if ([EAGLContext currentContext] == context) {
+    if ([EAGLContext currentContext] == _context) {
         [EAGLContext setCurrentContext:nil];
     }
-	context = nil;
+	_context = nil;
 }
 
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
+    
     // Release any cached data, images, etc. that aren't in use.
+    [RATextureWrapper cleanupAll: YES];
+    [RAGeometry cleanupAll: YES];
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
@@ -163,6 +165,20 @@
     }
 }
 
+- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration {
+    _needsDisplay = YES;
+}
+
+- (void)displayLinkUpdate:(CADisplayLink *)sender {
+    GLKView *view = (GLKView *)self.view;
+
+    if ( [_manipulator needsDisplay] || [_pager needsDisplay] || _needsDisplay ) {
+        [self update];
+        [view display];
+    }
+    
+    _needsDisplay = NO;
+}
 
 #pragma mark - Scene Graph
 
@@ -245,64 +261,55 @@
 
 - (void)setupGL
 {
-    [EAGLContext setCurrentContext:context];
+    [EAGLContext setCurrentContext:_context];
         
     glEnable(GL_DEPTH_TEST);
     
     glEnable(GL_BLEND);
     glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
     
-    /*
     // setup skybox
     NSString * starPath = [[NSBundle mainBundle] pathForResource:@"star1" ofType:@"png"];
     NSArray * starPaths = [NSArray arrayWithObjects: starPath, starPath, starPath, starPath, starPath, starPath, nil];
     NSError * error = nil;
-    NSDictionary *options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] 
-                                                        forKey:GLKTextureLoaderOriginBottomLeft];
+    NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:
+     [NSNumber numberWithBool:YES], GLKTextureLoaderOriginBottomLeft,
+     [NSNumber numberWithBool:YES], GLKTextureLoaderGenerateMipmaps,
+     nil];
     GLKTextureInfo * starTexture = [GLKTextureLoader cubeMapWithContentsOfFiles:starPaths options:options error:&error];
-    
-    skybox = [[GLKSkyboxEffect alloc] init];
-    skybox.label = @"Stars";
-    skybox.xSize = skybox.ySize = skybox.zSize = 40;
-    skybox.textureCubeMap.name = starTexture.name;
-    
-    NSLog(@"sky = %d, err = %@", starTexture.name, error);
-    */
+
+    _skybox = [[GLKSkyboxEffect alloc] init];
+    _skybox.label = @"Stars";
+    _skybox.xSize = _skybox.ySize = _skybox.zSize = 40;
+    _skybox.textureCubeMap.name = starTexture.name;
     
     // set as scene
     _sceneRoot = [self createBlueMarble];
     
-    //SetupGeometryVisitor * setupVisitor = [[SetupGeometryVisitor alloc] init];
-    //[self.sceneRoot accept: setupVisitor];
-    
     [self update];
-    [renderVisitor setupGL];
+    [_renderVisitor setupGL];
 }
 
 - (void)tearDownGL
 {
-    [EAGLContext setCurrentContext:context];
+    [EAGLContext setCurrentContext:_context];
     
     ReleaseGeometryVisitor * releaseVisitor = [[ReleaseGeometryVisitor alloc] init];
     [self.sceneRoot accept: releaseVisitor];
     
-    //effect = nil;
-    [renderVisitor tearDownGL];
+    [_renderVisitor tearDownGL];
 }
-
-#pragma mark - GLKView and GLKViewController delegate methods
 
 - (void)update
 {
-    self.camera.modelViewMatrix = [manipulator modelViewMatrix];
+    self.camera.modelViewMatrix = [_manipulator modelViewMatrix];
     
     // position light directly above the globe
     RAPolarCoordinate lightPolar = {
-        manipulator.latitude, manipulator.longitude, 1e7
+        _manipulator.latitude, _manipulator.longitude, 1e7
     };
     GLKVector3 lightEcef = ConvertPolarToEcef( lightPolar );
-    //effect.light0.position = GLKVector4MakeWithVector3(lightEcef, 1.0);
-    renderVisitor.lightPosition = lightEcef;
+    _renderVisitor.lightPosition = lightEcef;
     
     // !!! the scene view bound is incorrect
     
@@ -311,8 +318,8 @@
     float minDistance = -center.z - self.sceneRoot.bound.radius;
     float maxDistance = -center.z + self.sceneRoot.bound.radius;
     //NSLog(@"Z Buffer: %f - %f, Scene Radius: %f", minDistance, maxDistance, self.sceneRoot.bound.radius);
-    if ( minDistance < 0.0001f ) minDistance = 0.0001f;
-    if ( maxDistance < 50.0f ) maxDistance = 50.0f; // room for skybox
+    if ( minDistance < 0.001f ) minDistance = 0.001f;
+    if ( maxDistance < 60.0f ) maxDistance = 60.0f; // room for skybox
     
     // update projection
     float aspect = fabsf(self.view.bounds.size.width / self.view.bounds.size.height);
@@ -321,11 +328,13 @@
     self.camera.projectionMatrix = projectionMatrix;
     self.camera.viewport = self.view.bounds;
     
-    //skybox.transform.projectionMatrix = projectionMatrix;
-    //skybox.transform.modelviewMatrix = self.camera.modelViewMatrix;
+    _skybox.transform.projectionMatrix = projectionMatrix;
+    _skybox.transform.modelviewMatrix = self.camera.modelViewMatrix;
 
     [self.pager update];
 }
+
+#pragma mark - GLKView delegate methods
 
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect
 {
@@ -333,15 +342,13 @@
     glClearColor(0.0f, 0.2f, 0.0f, 1.0f);
     
     // render the skybox
-    //glDisable(GL_DEPTH_TEST);
-    //[skybox prepareToDraw];
-    //[skybox draw];
-    //glEnable(GL_DEPTH_TEST);
+    [_skybox prepareToDraw];
+    [_skybox draw];
     
     // run the render visitor
-    [renderVisitor clear];
-    [self.sceneRoot accept: renderVisitor];
-    [renderVisitor render];
+    [_renderVisitor clear];
+    [self.sceneRoot accept: _renderVisitor];
+    [_renderVisitor render];
     
     // check for errors
     GLenum err = glGetError();
@@ -355,9 +362,9 @@
         case GL_OUT_OF_MEMORY:      NSLog(@"glGetError: out of memory");        break;
         default:        NSLog(@"glGetError: unknown error = 0x%04X", err);      break;
     }
-
-    [RATextureWrapper cleanup];
-    [RAGeometry cleanup];
+    
+    [RATextureWrapper cleanupAll:NO];
+    [RAGeometry cleanupAll:NO];
 }
 
 @end

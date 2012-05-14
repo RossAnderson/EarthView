@@ -25,7 +25,7 @@
 @property (assign, nonatomic) GLKVector4 color;         // set 1st component to -1 to disable
 @property (assign, nonatomic) GLenum elementStyle;      // default: GL_TRIANGLES
 
-+ (void)cleanup;
++ (void)cleanupAll:(BOOL)all;
 
 - (void)setObjectData:(const void *)data withSize:(NSUInteger)length withStride:(NSUInteger)stride;
 - (void)setIndexData:(const void *)data withSize:(NSUInteger)length withStride:(NSUInteger)stride;

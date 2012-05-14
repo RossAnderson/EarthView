@@ -5,11 +5,11 @@ EarthView is an open-source 3D visualization of the Earth globe for iOS that use
 
 The project uses a quad-tree to page in map tiles that conform to the Tile Map Service standard (or, the flipped Google equivalent). The level of detail to display is determined by the estimated screen-space error of a given page.
 
-Besides fixing the bugs listed below, I am interested in adding topographical terrain detail to the map. I intend to load heightmap data using the same map tile system as the visible content.
+A recent update added realistic topography to the face of the globe for realistic mountains and valleys. The data source I used is NOAA GLOBE (http://www.ngdc.noaa.gov/mgg/topo/gltiles.html) which was converted to a grayscale tileset and uploaded to MapBox.
 
 Enjoy!
 
-![](https://github.com/RossAnderson/EarthView/raw/master/Screenshot-iphone.png)
+![](https://github.com/RossAnderson/EarthView/raw/master/screenshot1.png)
 
 How to Use
 ----------
@@ -39,7 +39,6 @@ Bugs and Limitations
 --------------------
 
 - The derived bounding boxes don't appear to be calculated correctly.
-- Should redraw in reaction to Manipulator movement, rather than a constant frame rate. There doesn't appear to be a good way to do this with GLKit.
+- Performance gets worse when the camera is zoomed in. I think this is because offscreen nodes are not properly skipped in the scene graph.
 - There are holes in the globe at the poles because there is no map tile content there.
 - The tilt control should bounce when you hit the hard stops.
-- Add support for MBTiles (http://mapbox.com/mbtiles-spec/) for locally stored/cached content.

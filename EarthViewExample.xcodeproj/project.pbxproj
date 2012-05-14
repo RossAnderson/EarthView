@@ -12,6 +12,9 @@
 		916EEB8D1552D4E800951ACC /* RAPageNode.m in Sources */ = {isa = PBXBuildFile; fileRef = 916EEB8C1552D4E800951ACC /* RAPageNode.m */; };
 		91B9BF1E15549FB100A7602E /* RAImageSampler.m in Sources */ = {isa = PBXBuildFile; fileRef = 91B9BF1D15549FB100A7602E /* RAImageSampler.m */; };
 		91C1D9BA15575D0C008717A9 /* RAWorldTour.m in Sources */ = {isa = PBXBuildFile; fileRef = 91C1D9B915575D0C008717A9 /* RAWorldTour.m */; };
+		91C1D9DE155B2CBC008717A9 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91C1D9DB155B2CBC008717A9 /* CFNetwork.framework */; };
+		91C1D9DF155B2CBC008717A9 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91C1D9DC155B2CBC008717A9 /* Security.framework */; };
+		91C1D9E0155B2CBC008717A9 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91C1D9DD155B2CBC008717A9 /* SystemConfiguration.framework */; };
 		91C9975C1548E1BF00B69A8A /* Icon114.png in Resources */ = {isa = PBXBuildFile; fileRef = 91C9975B1548E1BF00B69A8A /* Icon114.png */; };
 		91C9975E1548E1F000B69A8A /* Icon57.png in Resources */ = {isa = PBXBuildFile; fileRef = 91C9975D1548E1F000B69A8A /* Icon57.png */; };
 		91C997601548E21400B69A8A /* Icon144.png in Resources */ = {isa = PBXBuildFile; fileRef = 91C9975F1548E21400B69A8A /* Icon144.png */; };
@@ -59,6 +62,9 @@
 		91BBDFB1153A49A900CEF4BA /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = SOURCE_ROOT; };
 		91C1D9B815575D0C008717A9 /* RAWorldTour.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RAWorldTour.h; sourceTree = "<group>"; };
 		91C1D9B915575D0C008717A9 /* RAWorldTour.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RAWorldTour.m; sourceTree = "<group>"; };
+		91C1D9DB155B2CBC008717A9 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
+		91C1D9DC155B2CBC008717A9 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		91C1D9DD155B2CBC008717A9 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		91C9975B1548E1BF00B69A8A /* Icon114.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon114.png; sourceTree = "<group>"; };
 		91C9975D1548E1F000B69A8A /* Icon57.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon57.png; sourceTree = "<group>"; };
 		91C9975F1548E21400B69A8A /* Icon144.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon144.png; sourceTree = "<group>"; };
@@ -123,6 +129,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				91C1D9DE155B2CBC008717A9 /* CFNetwork.framework in Frameworks */,
+				91C1D9DF155B2CBC008717A9 /* Security.framework in Frameworks */,
+				91C1D9E0155B2CBC008717A9 /* SystemConfiguration.framework in Frameworks */,
 				91F77EA7153A089A00F8AE05 /* QuartzCore.framework in Frameworks */,
 				91F77E271539335000F8AE05 /* UIKit.framework in Frameworks */,
 				91F77E291539335000F8AE05 /* Foundation.framework in Frameworks */,
@@ -170,6 +179,9 @@
 				91F77E2C1539335000F8AE05 /* GLKit.framework */,
 				91F77E2E1539335000F8AE05 /* OpenGLES.framework */,
 				91F77EA6153A089A00F8AE05 /* QuartzCore.framework */,
+				91C1D9DB155B2CBC008717A9 /* CFNetwork.framework */,
+				91C1D9DC155B2CBC008717A9 /* Security.framework */,
+				91C1D9DD155B2CBC008717A9 /* SystemConfiguration.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -412,6 +424,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = MKNetworkKit;
 				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -431,6 +444,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = MKNetworkKit;
 				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
 				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
 				SDKROOT = iphoneos;

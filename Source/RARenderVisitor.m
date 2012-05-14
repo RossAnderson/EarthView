@@ -114,6 +114,8 @@ enum
 
 - (void)render
 {
+    //NSLog(@"Rendering %d objects", renderQueue.count);
+    
     [self sortBackToFront];
     
     if ( ! [shader isReady] ) [self setupGL];
@@ -172,39 +174,43 @@ enum
 
 - (void)applyPageNode:(RAPageNode *)node
 {
-    [self traversePage: node.page];
+    GLKMatrix4 modelViewMatrix = GLKMatrix4Multiply( self.camera.modelViewMatrix, [self currentTransform] );
+    GLKMatrix4 modelViewProjectionMatrix = GLKMatrix4Multiply( self.camera.projectionMatrix, modelViewMatrix );
+
+    [self traversePage:node.page withModelViewProjectionMatrix:modelViewProjectionMatrix];
 }
 
-- (bool)traversePage:(RAPage *)page {
+- (BOOL)traversePage:(RAPage *)page withModelViewProjectionMatrix:(GLKMatrix4)matrix {
     if ( page == nil ) return NO;
     
+    // don't bother traversing if we are offscreen
+    if ( ! [page isOnscreenWithCamera:self.camera] ) {
+        return YES;
+    }
+
     // is the page facing away from the camera?
     if ( page.tile.z > 2 && [page calculateTiltWithCamera:self.camera] < 0.0f ) return YES;
     
-    float texelError = 0.0f;
-    texelError = [page calculateScreenSpaceErrorWithCamera:self.camera];
+    float texelError = [page calculateScreenSpaceErrorWithCamera:self.camera];
     
     // should we choose to display this page?
-    if ( texelError < 3.f && page.geometry ) {
-        // don't bother traversing if we are offscreen
-        if ( ! [page isOnscreenWithCamera:self.camera] ) return YES;
-        
+    if ( texelError < 3.0f && page.isReady ) {
         [self applyGeometry: page.geometry];
         return YES;
     }
     
     BOOL success = YES;
     
-    // !!! this doesn't work well because it can't skip to grandchildren
-    success = ( page.child1.geometry && page.child2.geometry && page.child3.geometry && page.child4.geometry );
+    // !!! this doesn't work well because it can't skip to grandchildren: each level must be loaded consecutively
+    success = ( page.child1.isReady && page.child2.isReady && page.child3.isReady && page.child4.isReady );
     
     // traverse children
     if ( success ) {
-        [self traversePage: page.child1];
-        [self traversePage: page.child2];
-        [self traversePage: page.child3];
-        [self traversePage: page.child4];
-    } else {
+        [self traversePage:page.child1 withModelViewProjectionMatrix:matrix];
+        [self traversePage:page.child2 withModelViewProjectionMatrix:matrix];
+        [self traversePage:page.child3 withModelViewProjectionMatrix:matrix];
+        [self traversePage:page.child4 withModelViewProjectionMatrix:matrix];
+    } else if ( page.isReady ) {
         // don't bother traversing if we are offscreen
         if ( ! [page isOnscreenWithCamera:self.camera] ) return YES;
         

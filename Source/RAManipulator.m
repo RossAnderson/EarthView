@@ -40,6 +40,7 @@ typedef enum {
     CameraState     _state;
     
     UIView *        _view;
+    BOOL            _needsDisplay;
 }
 
 @synthesize camera;
@@ -48,6 +49,7 @@ typedef enum {
 {
     self = [super init];
     if (self) {
+        _needsDisplay = YES;
     }
     return self;
 }
@@ -93,6 +95,7 @@ typedef enum {
     NSAssert( !isnan(latitude), @"angle cannot be NAN" );
     
     _state.latitude = NormalizeLatitude(latitude);
+    _needsDisplay = YES;
 }
 
 - (double)longitude {
@@ -103,6 +106,7 @@ typedef enum {
     NSAssert( !isnan(longitude), @"angle cannot be NAN" );
     
     _state.longitude = NormalizeLongitude(longitude);
+    _needsDisplay = YES;
 }
 
 - (double)azimuth {
@@ -113,6 +117,7 @@ typedef enum {
     NSAssert( !isnan(azimuth), @"angle cannot be NAN" );
 
     _state.azimuth = NormalizeLongitude(azimuth);
+    _needsDisplay = YES;
 }
 
 - (double)elevation {
@@ -125,6 +130,7 @@ typedef enum {
     if ( elevation > 90. ) elevation = 90.;
     
     _state.elevation = elevation;
+    _needsDisplay = YES;
 }
 
 - (double)distance {
@@ -137,6 +143,13 @@ typedef enum {
     if ( distance > 1.e7 ) distance = 1.e7;
     
     _state.distance = distance;
+    _needsDisplay = YES;
+}
+
+- (BOOL)needsDisplay {
+    BOOL flag = _needsDisplay;
+    _needsDisplay = NO;
+    return flag;
 }
 
 /*
@@ -216,6 +229,7 @@ typedef enum {
         case UIGestureRecognizerStateCancelled:
         case UIGestureRecognizerStateFailed:
             _state = startState;
+            _needsDisplay = YES;
             break;
         case UIGestureRecognizerStateBegan:
             [self stop:nil];
@@ -267,6 +281,7 @@ typedef enum {
         case UIGestureRecognizerStateCancelled:
         case UIGestureRecognizerStateFailed:
             _state = startState;
+            _needsDisplay = YES;
             break;
         case UIGestureRecognizerStateBegan:
         {
@@ -503,18 +518,6 @@ typedef enum {
     anim1.chainedAnimation = anim2;
     anim2.chainedAnimation = anim3;
     [anim1 beginWithTarget:self];
-}
-
-- (void)debugWorldTour:(id)sender {
-    // rotate slowly along line of constant latitude
-    double duration = 12.*3600.;    // around the world in twelve short hours
-    
-    TPPropertyAnimation *anim = [TPPropertyAnimation propertyAnimationWithKeyPath:@"longitude"];
-    anim.duration = duration;
-    anim.fromValue = [NSNumber numberWithDouble:_state.longitude];
-    anim.toValue = [NSNumber numberWithDouble:_state.longitude+360];
-    anim.timing = TPPropertyAnimationTimingLinear;
-    [anim beginWithTarget:self];
 }
 
 @end

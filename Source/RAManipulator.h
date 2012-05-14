@@ -28,4 +28,6 @@
 
 - (GLKMatrix4)modelViewMatrix;
 
+- (BOOL)needsDisplay;
+
 @end

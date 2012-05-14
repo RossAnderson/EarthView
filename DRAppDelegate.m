@@ -10,6 +10,10 @@
 
 #import "RASceneGraphController.h"
 
+// NOTICE:
+// The imagery tile sets below are for example use only. Please consult with the 
+// individual copyright holder of each tile set before using it in your app. The
+// Dancing Robots tile sets (the defaults below) may not be used without permission.
 #define IMAGERY_DATASET 1
 #define TERRAIN_DATASET 1
 
@@ -29,6 +33,10 @@
         self.viewController = [[RASceneGraphController alloc] initWithNibName:@"SceneView_iPad" bundle:nil];
     }
     
+    // allow caching for tile images
+    [[NSURLCache sharedURLCache] setMemoryCapacity:4*1024*1024];
+    [[NSURLCache sharedURLCache] setDiskCapacity:128*1024*1024];
+    
     // setup the tile set used
     RATileDatabase * database = [RATileDatabase new];
     database.bounds = CGRectMake( -180,-90,360,180 );
@@ -37,7 +45,18 @@
     
     switch( IMAGERY_DATASET ) {
         case 1:
-            // MapBox Streets: http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets.jsonp
+            // Dancing Robots Streets: https://tiles.mapbox.com/v3/dancingrobots.map-zlkx39ti.jsonp
+            database.baseUrlStrings = [NSArray arrayWithObjects:
+                                       @"http://a.tiles.mapbox.com/v3/dancingrobots.map-zlkx39ti/{z}/{x}/{y}.png",
+                                       @"http://b.tiles.mapbox.com/v3/dancingrobots.map-zlkx39ti/{z}/{x}/{y}.png",
+                                       @"http://c.tiles.mapbox.com/v3/dancingrobots.map-zlkx39ti/{z}/{x}/{y}.png",
+                                       @"http://d.tiles.mapbox.com/v3/dancingrobots.map-zlkx39ti/{z}/{x}/{y}.png",
+                                       nil];
+            database.maxzoom = 17;
+            break;
+            
+        case 2:
+            // MapBox Streets: http://tiles.mapbox.com/v3/mapbox.mapbox-streets.jsonp
             database.baseUrlStrings = [NSArray arrayWithObjects:
                                        @"http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
                                        @"http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
@@ -47,8 +66,8 @@
             database.maxzoom = 17;
             break;
             
-        case 2:
-            // Sample database from: http://a.tiles.mapbox.com/v3/mapbox.blue-marble-topo-bathy-jul.jsonp
+        case 3:
+            // Sample database from: http://tiles.mapbox.com/v3/mapbox.blue-marble-topo-bathy-jul.jsonp
             database.baseUrlStrings = [NSArray arrayWithObjects:
                @"http://a.tiles.mapbox.com/v3/mapbox.blue-marble-topo-bathy-jul/{z}/{x}/{y}.png",
                @"http://b.tiles.mapbox.com/v3/mapbox.blue-marble-topo-bathy-jul/{z}/{x}/{y}.png",
@@ -58,7 +77,7 @@
             database.maxzoom = 8;
             break;
             
-        case 3:
+        case 4:
             // OpenStreetMap
             database.baseUrlStrings = [NSArray arrayWithObjects:
                @"http://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -68,7 +87,7 @@
             database.maxzoom = 18;
             break;
             
-        case 4:
+        case 5:
             // Stamen Maps Watercolor - http://maps.stamen.com/watercolor
             database.baseUrlStrings = [NSArray arrayWithObjects:
                 @"http://a.tile.stamen.com/watercolor/{z}/{x}/{y}.png",
@@ -92,12 +111,13 @@
     
     switch ( TERRAIN_DATASET ) {
         case 1:
-            // World Topography: https://tiles.mapbox.com/v3/dancingrobots.world-topo
+            // Dancing Robots Topography: http://a.tiles.mapbox.com/v3/dancingrobots.globe-topo.json
+            // Based on NOAA GLOBE dataset: http://www.ngdc.noaa.gov/mgg/topo/gltiles.html
             database.baseUrlStrings = [NSArray arrayWithObjects:
-                @"http://a.tiles.mapbox.com/v3/dancingrobots.world-topo/{z}/{x}/{y}.png",
-                @"http://b.tiles.mapbox.com/v3/dancingrobots.world-topo/{z}/{x}/{y}.png",
-                @"http://c.tiles.mapbox.com/v3/dancingrobots.world-topo/{z}/{x}/{y}.png",
-                @"http://d.tiles.mapbox.com/v3/dancingrobots.world-topo/{z}/{x}/{y}.png",
+                @"http://a.tiles.mapbox.com/v3/dancingrobots.globe-topo/{z}/{x}/{y}.png",
+                @"http://b.tiles.mapbox.com/v3/dancingrobots.globe-topo/{z}/{x}/{y}.png",
+                @"http://c.tiles.mapbox.com/v3/dancingrobots.globe-topo/{z}/{x}/{y}.png",
+                @"http://d.tiles.mapbox.com/v3/dancingrobots.globe-topo/{z}/{x}/{y}.png",
                 nil];
             database.maxzoom = 8;
             break;

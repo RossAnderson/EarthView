@@ -12,6 +12,9 @@
 
 - (id)initWithImage:(UIImage *)img;
 
+- (CGFloat)grayAtNearestPixel:(CGPoint)p;
+- (CGFloat)grayByInterpolatingPixels:(CGPoint)p;
+
 - (UIColor *)colorAtNearestPixel:(CGPoint)p;
 - (UIColor *)colorByInterpolatingPixels:(CGPoint)p;
 

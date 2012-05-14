@@ -18,12 +18,10 @@
 @property (readonly) GLenum                     target;
 @property (readonly) GLuint                     width;
 @property (readonly) GLuint                     height;
-@property (readonly) GLKTextureInfoAlphaState   alphaState;
-@property (readonly) GLKTextureInfoOrigin       textureOrigin;
-@property (readonly) BOOL                       containsMipmaps;
 
-+ (void)cleanup;
++ (void)cleanupAll:(BOOL)all;
 
 - (id)initWithTextureInfo:(GLKTextureInfo *)info;
+- (id)initWithImage:(UIImage *)image;
 
 @end

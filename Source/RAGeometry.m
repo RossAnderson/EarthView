@@ -14,10 +14,14 @@
 #import <OpenGLES/ES2/gl.h>
 #import <OpenGLES/ES2/glext.h>
 
+#import <libkern/OSAtomic.h>
+
 #import "RABoundingSphere.h"
 
 #define BUFFER_INVALID ((GLuint)-1)
 #define kMaxDeleteBatchSize (8)
+
+static int64_t sGeometryObjectCount = 0;
 
 
 @interface GLBufferSet : NSObject
@@ -40,16 +44,22 @@
 }
 
 - (void)generateAndBind {
-    if ( _vertexArray == BUFFER_INVALID )
+    if ( _vertexArray == BUFFER_INVALID ) {
         glGenVertexArraysOES(1, &_vertexArray);
-    glBindVertexArrayOES(_vertexArray);
+        
+        // simple way to check that we don't have too many geometries active
+        if ( _vertexArray > 500 )
+            NSLog(@"Warning: vertex array id = %d", _vertexArray);
+    }
     
     if ( _vertexBuffer == BUFFER_INVALID )
         glGenBuffers(1, &_vertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
     
     if ( _indexBuffer == BUFFER_INVALID )
         glGenBuffers(1, &_indexBuffer);
+    
+    glBindVertexArrayOES(_vertexArray);
+    glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
 }
 
@@ -91,15 +101,11 @@
 @synthesize elementStyle = _elementStyle;
 
 
-+ (NSMutableDictionary *)geometrySetDictionary {
++ (NSMutableSet *)geometryDeletionSetForKey:(NSString *)key {
     static NSMutableDictionary * dict = nil;
     if ( dict == nil ) dict = [NSMutableDictionary dictionary];
-    return dict;
-}
-
-+ (NSMutableSet *)geometrySetForKey:(NSString *)key {
+    
     // get or create a set for this context
-    NSMutableDictionary * dict = [[self class] geometrySetDictionary];
     NSMutableSet * set = [dict objectForKey:key];
     if ( !set ) {
         set = [NSMutableSet set];
@@ -108,19 +114,17 @@
     return set;
 }
 
-+ (void)cleanup {
-    EAGLContext * context = [EAGLContext currentContext];
-    NSAssert( context, @"OpenGL ES context must be valid!" );
++ (void)cleanupAll:(BOOL)all {
+    NSAssert( [EAGLContext currentContext], @"OpenGL ES context must be valid!" );
     
-    NSString * key = [context description];
-    NSMutableSet * set = [self geometrySetForKey:key];
+    NSString * key = [[[EAGLContext currentContext] sharegroup] description];
+    NSMutableSet * set = [self geometryDeletionSetForKey:key];
     
     NSUInteger count = 0;
-    
     @synchronized (set) {
         if ( [set count] < 1 ) return;
                 
-        while( count < kMaxDeleteBatchSize && [set count] ) {
+        while( ( all || count < kMaxDeleteBatchSize ) && [set count] ) {
             GLBufferSet * buffer = [set anyObject];
             [set removeObject:buffer];
             
@@ -131,6 +135,8 @@
         }
     }
     
+    //NSLog(@"Deleted %d geometries.", count);
+
     // check for errors
     GLenum err = glGetError();
     if ( err != GL_NO_ERROR )
@@ -153,14 +159,21 @@
         _elementStyle = GL_TRIANGLES;
         
         _vertexDataDirty = _indexDataDirty = YES;
+        
+        OSAtomicIncrement64( &sGeometryObjectCount );
+        if ( sGeometryObjectCount > 500 ) {
+            NSLog(@"Warning: there are now %lld geometry objects!", sGeometryObjectCount);
+        }
     }
     return self;
 }
 
 - (void)dealloc
 {
+    OSAtomicDecrement64( &sGeometryObjectCount );
+
     if ( _buffers && _contextKey ) {
-        NSMutableSet * set = [[self class] geometrySetForKey:_contextKey];
+        NSMutableSet * set = [[self class] geometryDeletionSetForKey:_contextKey];
 
         @synchronized (set) {
             // mark for cleanup
@@ -256,10 +269,10 @@
     
     @synchronized(self) {
         if ( _buffers == nil ) {
-            EAGLContext * context = [EAGLContext currentContext];
+            NSString * key = [[[EAGLContext currentContext] sharegroup] description];
 
             _buffers = [GLBufferSet new];
-            _contextKey = [context description];
+            _contextKey = key;
         }
         [_buffers generateAndBind];
         
@@ -309,11 +322,8 @@
 {
     NSAssert( [EAGLContext currentContext], @"must be called with an active context" );
     
-    NSLog(@"releaseGL!");
-
     @synchronized(self) {
         [_buffers releaseGL];
-        
         _vertexDataDirty = _indexDataDirty = YES;
     }
 }
@@ -351,7 +361,7 @@
 
             glDrawElements(self.elementStyle, [_indexData length]/_indexStride, type, 0);
         } else {
-            NSLog(@"Nothing to draw in %@", self);
+            NSLog(@"-[%@ renderGL]: nothing to draw", self);
         }
     }
 }

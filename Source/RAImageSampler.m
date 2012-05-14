@@ -49,32 +49,32 @@
     if ( _rawData ) free( _rawData );
 }
 
-- (UIColor *)colorAtNearestPixel:(CGPoint)p {
+- (BOOL)extractNearestRgba:(CGPoint)p to:(CGFloat*)rgba {
     // y-flip
     p.y = _height - 1.0f - p.y;
     
     int x = round(p.x);
     int y = round(p.y);
     
-    if ( x < 0 || x >= _width ) return nil;
-    if ( y < 0 || y >= _height ) return nil;
+    if ( x < 0 || x >= _width ) return NO;
+    if ( y < 0 || y >= _height ) return NO;
     
     unsigned char * pixel = _rawData + (_bytesPerRow * y) + (_bytesPerPixel * x);
     
-    CGFloat red   = pixel[0] / 255.0;
-    CGFloat green = pixel[1] / 255.0;
-    CGFloat blue  = pixel[2] / 255.0;
-    CGFloat alpha = pixel[3] / 255.0;
-    
-    return [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
+    rgba[0] = pixel[0] / 255.0;
+    rgba[1] = pixel[1] / 255.0;
+    rgba[2] = pixel[2] / 255.0;
+    rgba[3] = pixel[3] / 255.0;
+    return YES;
 }
-- (UIColor *)colorByInterpolatingPixels:(CGPoint)p {
-    // snap to bounds of image
-    if ( p.x < 0 ) return [self colorByInterpolatingPixels:CGPointMake(0, p.y)];
-    if ( p.x > _width-2 ) return [self colorByInterpolatingPixels:CGPointMake(_width-2, p.y)];
-    if ( p.y < 0 ) return [self colorByInterpolatingPixels:CGPointMake(p.x, 0)];
-    if ( p.y > _height-2 ) return [self colorByInterpolatingPixels:CGPointMake(p.x, _height-2)];
 
+- (BOOL)extractInterpolatedRgba:(CGPoint)p to:(CGFloat*)rgba {
+    // snap to bounds of image
+    if ( p.x < 0 ) return [self extractInterpolatedRgba:CGPointMake(0, p.y) to:rgba];
+    if ( p.x > _width-2 ) return [self extractInterpolatedRgba:CGPointMake(_width-2, p.y) to:rgba];
+    if ( p.y < 0 ) return [self extractInterpolatedRgba:CGPointMake(p.x, 0) to:rgba];
+    if ( p.y > _height-2 ) return [self extractInterpolatedRgba:CGPointMake(p.x, _height-2) to:rgba];
+    
     // y-flip
     p.y = _height-2 - p.y;
     
@@ -88,12 +88,12 @@
     CGFloat yf0 = 1.0f - modff(p.y, &ipart);
     CGFloat xf1 = 1.0f - xf0;
     CGFloat yf1 = 1.0f - yf0;
-        
+    
     unsigned char * pixel_x0y0 = _rawData + (_bytesPerRow * y0) + (_bytesPerPixel * x0);
     unsigned char * pixel_x1y0 = _rawData + (_bytesPerRow * y0) + (_bytesPerPixel * x1);
     unsigned char * pixel_x0y1 = _rawData + (_bytesPerRow * y1) + (_bytesPerPixel * x0);
     unsigned char * pixel_x1y1 = _rawData + (_bytesPerRow * y1) + (_bytesPerPixel * x1);
-
+    
     // do bilinear interpolation
     float sy0[4] = { pixel_x0y0[0] * xf0 + pixel_x1y0[0] * xf1,
         pixel_x0y0[1] * xf0 + pixel_x1y0[1] * xf1,
@@ -108,12 +108,35 @@
         sy0[2] * yf0 + sy1[2] * yf1,
         sy0[3] * yf0 + sy1[3] * yf1 };
     
-    CGFloat red   = sxy[0] / 255.0;
-    CGFloat green = sxy[1] / 255.0;
-    CGFloat blue  = sxy[2] / 255.0;
-    CGFloat alpha = sxy[3] / 255.0;
-    
-    return [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
+    rgba[0] = sxy[0] / 255.0;
+    rgba[1] = sxy[1] / 255.0;
+    rgba[2] = sxy[2] / 255.0;
+    rgba[3] = sxy[3] / 255.0;
+    return YES;
+}
+
+- (CGFloat)grayAtNearestPixel:(CGPoint)p {
+    CGFloat rgba[4];
+    if ( ![self extractNearestRgba:p to:rgba] ) return 0.0;
+    return ( rgba[0] + rgba[1] + rgba[2] ) * 0.33f;
+}
+
+- (CGFloat)grayByInterpolatingPixels:(CGPoint)p {
+    CGFloat rgba[4];
+    if ( ![self extractInterpolatedRgba:p to:rgba] ) return 0.0;
+    return ( rgba[0] + rgba[1] + rgba[2] ) * 0.33f;
+}
+
+- (UIColor *)colorAtNearestPixel:(CGPoint)p {
+    CGFloat rgba[4];
+    if ( ![self extractNearestRgba:p to:rgba] ) return nil;
+    return [UIColor colorWithRed:rgba[0] green:rgba[1] blue:rgba[2] alpha:rgba[3]];
+}
+
+- (UIColor *)colorByInterpolatingPixels:(CGPoint)p {
+    CGFloat rgba[4];
+    if ( ![self extractInterpolatedRgba:p to:rgba] ) return nil;
+    return [UIColor colorWithRed:rgba[0] green:rgba[1] blue:rgba[2] alpha:rgba[3]];
 }
 
 @end

@@ -30,4 +30,6 @@
 - (void)setup;  // call once the databases are configured
 - (void)update;
 
+- (BOOL)needsDisplay;
+
 @end

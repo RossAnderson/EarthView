@@ -8,7 +8,7 @@
 
 #import "RATextureWrapper.h"
 
-#define kMaxDeleteBatchSize (8)
+#define kMaxDeleteBatchSize (32)
 
 
 @implementation RATextureWrapper {
@@ -19,19 +19,12 @@
 @synthesize target = _target;
 @synthesize width = _width;
 @synthesize height = _height;
-@synthesize alphaState = _alphaState;
-@synthesize textureOrigin = _textureOrigin;
-@synthesize containsMipmaps = _containsMipmaps;
 
-+ (NSMutableDictionary *)textureSetDictionary {
++ (NSMutableSet *)textureDeletionSetForKey:(NSString *)key {
     static NSMutableDictionary * dict = nil;
     if ( dict == nil ) dict = [NSMutableDictionary dictionary];
-    return dict;
-}
-
-+ (NSMutableSet *)textureSetForKey:(NSString *)key {
+    
     // get or create a set for this context
-    NSMutableDictionary * dict = [[self class] textureSetDictionary];
     NSMutableSet * set = [dict objectForKey:key];
     if ( !set ) {
         set = [NSMutableSet set];
@@ -40,60 +33,118 @@
     return set;
 }
 
-+ (void)cleanup {
-    EAGLContext * context = [EAGLContext currentContext];
-    NSAssert( context, @"OpenGL ES context must be valid!" );
++ (void)cleanupAll:(BOOL)all {
+    NSAssert( [EAGLContext currentContext], @"OpenGL ES context must be valid!" );
     
-    NSString * key = [context description];
-    NSMutableSet * set = [self textureSetForKey:key];
+    NSString * key = [[[EAGLContext currentContext] sharegroup] description];
+    NSMutableSet * set = [self textureDeletionSetForKey:key];
     
-    GLuint * textureNames = NULL;
+    GLuint textureNames[kMaxDeleteBatchSize];
     NSUInteger count = 0;
     
     @synchronized (set) {
-        if ( [set count] < 1 ) return;
-
-        textureNames = (GLuint *)alloca( kMaxDeleteBatchSize );
+        if ( set.count < 1 ) return;
         
-        while( count < kMaxDeleteBatchSize && [set count] ) {
-            NSNumber * nameValue = [set anyObject];
+        NSNumber * nameValue = nil;
+        while( (nameValue = [set anyObject]) ) {
             [set removeObject:nameValue];
             
             textureNames[count] = [nameValue intValue];
             count++;
+            
+            if ( count == kMaxDeleteBatchSize ) break;
         }
     }
+    
+    if ( count > 0 ) {
+        glDeleteTextures(count, textureNames);
+        //NSLog(@"Deleted %d textures.", count);
 
-    glDeleteTextures(count, textureNames);
-    NSLog(@"Deleted %d textures.", count);
+        // check for errors
+        GLenum err = glGetError();
+        if ( err != GL_NO_ERROR )
+            NSLog(@"+[RATextureWrapper cleanup]: glGetError = %d", err);
+    }
+    
+    // cleanup more if requested
+    if ( all ) [self cleanupAll:YES];
+}
 
-    // check for errors
-    GLenum err = glGetError();
-    if ( err != GL_NO_ERROR )
-        NSLog(@"+[RATextureWrapper cleanup]: glGetError = %d", err);
+- (id)init
+{
+    self = [super init];
+    if (self) {
+        NSAssert( [EAGLContext currentContext], @"OpenGL ES context must be valid!" );
+        NSString * key = [[[EAGLContext currentContext] sharegroup] description];
+        _contextKey = key;
+    }
+    return self;
 }
 
 - (id)initWithTextureInfo:(GLKTextureInfo *)info {
-    self = [super init];
+    self = [self init];
     if ( self && info ) {
         _name = info.name;
         _target = info.target;
         _width = info.width;
         _height = info.height;
-        _alphaState = info.alphaState;
-        _textureOrigin = info.textureOrigin;
-        _containsMipmaps = info.containsMipmaps;
+    }
+    return self;
+}
 
-        EAGLContext * context = [EAGLContext currentContext];
-        NSAssert( context, @"OpenGL ES context must be valid!" );
-        _contextKey = [context description];
+- (id)initWithImage:(UIImage *)image {
+    self = [self init];
+    if ( self && image ) {
+        // get raw access to image data
+        CGImageRef imageRef = [image CGImage];
+        _width = CGImageGetWidth(imageRef);
+        _height = CGImageGetHeight(imageRef);
+        
+        char * pixels = (char *)calloc( _height * _width * 4, sizeof(char) );
+        NSUInteger bitsPerComponent = 8;
+        NSUInteger bytesPerPixel = 4;
+        NSUInteger bytesPerRow = bytesPerPixel * _width;
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+        
+        CGContextRef context = CGBitmapContextCreate( pixels, _width, _height, 
+                                                     bitsPerComponent, bytesPerRow, colorSpace,
+                                                     kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big );
+        
+        // draw, y-flipped
+        CGContextTranslateCTM( context, 0, _height );
+        CGContextScaleCTM( context, 1.0f, -1.0f );
+        CGContextDrawImage(context, CGRectMake(0, 0, _width, _height), imageRef);
+        
+        // generate texture object
+        GLuint texture;
+        glGenTextures( 1, &texture );
+        glBindTexture( GL_TEXTURE_2D, texture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        _target = GL_TEXTURE_2D;
+        _name = texture;
+        
+        // upload image
+        glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels );
+        glGenerateMipmap( GL_TEXTURE_2D );
+        
+        CGContextRelease(context);
+        CGColorSpaceRelease(colorSpace);
+        free( pixels );
+
+        // simple way to check that we don't have too many textures active
+        if ( texture > 500 )
+            NSLog(@"Warning: texture id = %d", texture);
     }
     return self;
 }
 
 - (void)dealloc {
     if ( _name && _contextKey ) {
-        NSMutableSet * set = [[self class] textureSetForKey:_contextKey];
+        NSMutableSet * set = [[self class] textureDeletionSetForKey:_contextKey];
 
         // mark for cleanup
         @synchronized (set) {

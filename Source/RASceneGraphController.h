@@ -12,7 +12,7 @@
 #import "RACamera.h"
 #import "RATilePager.h"
 
-@interface RASceneGraphController : GLKViewController
+@interface RASceneGraphController : UIViewController <GLKViewDelegate>
 
 @property (readonly, nonatomic) RANode * sceneRoot;
 @property (readonly, nonatomic) RACamera * camera;

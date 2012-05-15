@@ -171,12 +171,21 @@
 
 - (void)displayLinkUpdate:(CADisplayLink *)sender {
     GLKView *view = (GLKView *)self.view;
+    
+    BOOL manipulatorMoved = [_manipulator needsDisplay];
+    
+    _needsDisplay |= manipulatorMoved;
+    _needsDisplay |= [_pager needsDisplay];
 
-    if ( [_manipulator needsDisplay] || [_pager needsDisplay] || _needsDisplay ) {
+    if ( _needsDisplay ) {
         [self update];
         [view display];
     }
     
+    if ( manipulatorMoved ) {
+        [_pager updateIfNeeded];
+    }
+
     _needsDisplay = NO;
 }
 
@@ -330,8 +339,6 @@
     
     _skybox.transform.projectionMatrix = projectionMatrix;
     _skybox.transform.modelviewMatrix = self.camera.modelViewMatrix;
-
-    [self.pager update];
 }
 
 #pragma mark - GLKView delegate methods

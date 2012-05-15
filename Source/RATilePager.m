@@ -31,10 +31,11 @@
     RATextureWrapper *      _defaultTexture;
         
     NSOperationQueue *      _updateQueue;
-    NSOperationQueue *      _connectionQueue;
+    //NSOperationQueue *      _connectionQueue;
     NSOperationQueue *      _graphicsQueue;
     
     BOOL                    _needsDisplay;
+    BOOL                    _updateAgain;
 }
 
 @synthesize imageryDatabase, terrainDatabase, auxilliaryContext, rootNode, rootPages, camera;
@@ -46,8 +47,8 @@
         _updateQueue = [[NSOperationQueue alloc] init];
         [_updateQueue setName:@"org.dancingrobots.traversequeue"];
 
-        _connectionQueue = [[NSOperationQueue alloc] init];
-        [_connectionQueue setName:@"org.dancingrobots.connectionqueue"];
+        //_connectionQueue = [[NSOperationQueue alloc] init];
+        //[_connectionQueue setName:@"org.dancingrobots.connectionqueue"];
 
         _graphicsQueue = [[NSOperationQueue alloc] init];
         [_graphicsQueue setName:@"org.dancingrobots.graphicsqueue"];
@@ -62,8 +63,8 @@
     [_updateQueue cancelAllOperations];
     [_updateQueue waitUntilAllOperationsAreFinished];
     
-    [_connectionQueue cancelAllOperations];
-    [_connectionQueue waitUntilAllOperationsAreFinished];
+    //[_connectionQueue cancelAllOperations];
+    //[_connectionQueue waitUntilAllOperationsAreFinished];
 
     [_graphicsQueue cancelAllOperations];
     [_graphicsQueue waitUntilAllOperationsAreFinished];
@@ -292,7 +293,7 @@
 
 - (void)requestPage:(RAPage *)page {
     NSAssert( page != nil, @"the requested page must be valid");
-    const NSUInteger kMaxQueueDepth = 32;
+    //const NSUInteger kMaxQueueDepth = 8;
     const NSTimeInterval kTimeoutInterval = 5.0f;
     
     __block RATilePager * mySelf = self;
@@ -303,13 +304,15 @@
         
         if ( url == nil ) {
             page.imageryState = Failed;
-        } else if ( _connectionQueue.operationCount < kMaxQueueDepth ) {
+        //} else if ( _connectionQueue.operationCount > kMaxQueueDepth ) {
+        //    _outstandingRequests++;
+        } else {
             page.imageryState = Loading;
             
             // capture ivar locally to avoid retain cycle
             NSOperationQueue * graphicsQueue = _graphicsQueue;
             
-            [_connectionQueue addOperationWithBlock:^{
+            [_updateQueue addOperationWithBlock:^{
                 NSURLRequest * request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestReturnCacheDataElseLoad timeoutInterval:kTimeoutInterval];
                 NSURLResponse * response = nil;
                 NSError * error = nil;
@@ -365,13 +368,15 @@
         
         if ( url == nil ) {
             page.terrainState = Failed;
-        } else if ( _connectionQueue.operationCount < kMaxQueueDepth ) {
+        //} else if ( _connectionQueue.operationCount > kMaxQueueDepth ) {
+        //    _outstandingRequests++;
+        } else {
             page.terrainState = Loading;
 
             // capture ivar locally to avoid retain cycle
             NSOperationQueue * updateQueue = _updateQueue;
 
-            [_connectionQueue addOperationWithBlock:^{
+            [_updateQueue addOperationWithBlock:^{
                 NSURLRequest * request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestReturnCacheDataElseLoad timeoutInterval:kTimeoutInterval];
 
                 NSURLResponse * response = nil;
@@ -426,6 +431,9 @@
     GLKVector3 corner = ConvertPolarToEcef( [self.imageryDatabase tileLatLonOrigin:page.tile] );
     [page setCenter:center andRadius:GLKVector3Distance(center, corner)];
     
+    // any time we add new pages we should re-traverse to give them an oppurtunity to load
+    _updateAgain = YES;
+    
     return page;
 }
 
@@ -450,16 +458,8 @@
     if ( page.tile.z >= self.imageryDatabase.maxzoom )
         texelError = 0.0f; // force display at maximum zoom level
     
-    // should we choose to display this page?
-    if ( texelError < 3.0f ) {
-        //[self updatePageIfNeeded: page];
-        //[self requestPage: page];
-        
-        // update the page's timestamp
-        page.lastRequestedTimestamp = timestamp;
-
-        goto pruneChildren;
-    } else {
+    // should we traverse to find more detail?
+    if ( texelError > 3.0f ) {
         // traverse children
         [self preparePageForTraversal:page];
         
@@ -467,30 +467,32 @@
         [self traversePage:page.child2 withTimestamp:timestamp];
         [self traversePage:page.child3 withTimestamp:timestamp];
         [self traversePage:page.child4 withTimestamp:timestamp];
-        return;
+    } else {
+        // update the page's timestamp
+        page.lastRequestedTimestamp = timestamp;
+        
+        // prune children
+        // !!! replace this with another method that doesn't remove children immediately
+        page.child1 = page.child2 = page.child3 = page.child4 = nil;
     }
-    
-pruneChildren:
-    // prune children
-    // !!! replace this with another method that doesn't remove children immediately
-    page.child1 = page.child2 = page.child3 = page.child4 = nil;
-    return;
 }
 
-- (void)update {
-    //NSLog(@"Ops: %d updates, %d url loading, %d graphics updates", _updateQueue.operationCount, _connectionQueue.operationCount, _graphicsQueue.operationCount);
-
+- (void)updateIfNeeded {
     // only traverse when all previous update operations have completed 
     if ( _updateQueue.operationCount > 0 ) return;
-        
+    
     // load default texture
     if ( _defaultTexture == nil ) {
         UIImage * gridImage = [UIImage imageNamed:@"grid256"];
         _defaultTexture = [[RATextureWrapper alloc] initWithImage:gridImage];
     }
-
-    NSTimeInterval currentTime = [NSDate timeIntervalSinceReferenceDate];
     
+    [self update];
+}
+
+- (void)update {
+    NSTimeInterval currentTime = [NSDate timeIntervalSinceReferenceDate];
+
     // capture self to avoid a retain cycle
     __block RATilePager *mySelf = self;
     
@@ -499,6 +501,12 @@ pruneChildren:
         [mySelf->rootPages enumerateObjectsUsingBlock:^(RAPage *page, BOOL *stop) {
             [mySelf traversePage:page withTimestamp:currentTime];
         }];
+        
+        // update again if new pages were added during traverse
+        if ( mySelf->_updateAgain ) {
+            mySelf->_updateAgain = NO;
+            [mySelf update];
+        }
     }];
 }
 

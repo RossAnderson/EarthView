@@ -38,7 +38,7 @@ The example application connects to various map tile services over the web such 
 Bugs and Limitations
 --------------------
 
-- The derived bounding boxes don't appear to be calculated correctly.
+- The derived bounding spheres don't appear to be calculated correctly.
 - Performance gets worse when the camera is zoomed in. I think this is because offscreen nodes are not properly skipped in the scene graph.
 - There are holes in the globe at the poles because there is no map tile content there.
 - The tilt control should bounce when you hit the hard stops.

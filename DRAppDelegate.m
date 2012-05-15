@@ -13,7 +13,8 @@
 // NOTICE:
 // The imagery tile sets below are for example use only. Please consult with the 
 // individual copyright holder of each tile set before using it in your app. The
-// Dancing Robots tile sets (the defaults below) may not be used without permission.
+// Dancing Robots tile sets (the defaults below) may not be used in your own 
+// app without permission.
 #define IMAGERY_DATASET 1
 #define TERRAIN_DATASET 1
 

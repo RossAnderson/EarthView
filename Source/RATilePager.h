@@ -28,7 +28,7 @@
 @property (strong) RACamera * camera;
 
 - (void)setup;  // call once the databases are configured
-- (void)update;
+- (void)updateIfNeeded;
 
 - (BOOL)needsDisplay;
 

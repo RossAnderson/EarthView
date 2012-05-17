@@ -49,6 +49,14 @@
     if ( _rawData ) free( _rawData );
 }
 
+- (NSUInteger)width {
+    return _width;
+}
+
+- (NSUInteger)height {
+    return _height;
+}
+
 - (BOOL)extractNearestRgba:(CGPoint)p to:(CGFloat*)rgba {
     // y-flip
     p.y = _height - 1.0f - p.y;
@@ -117,13 +125,13 @@
 
 - (CGFloat)grayAtNearestPixel:(CGPoint)p {
     CGFloat rgba[4];
-    if ( ![self extractNearestRgba:p to:rgba] ) return 0.0;
+    if ( ![self extractNearestRgba:p to:rgba] ) return -1;
     return ( rgba[0] + rgba[1] + rgba[2] ) * 0.33f;
 }
 
 - (CGFloat)grayByInterpolatingPixels:(CGPoint)p {
     CGFloat rgba[4];
-    if ( ![self extractInterpolatedRgba:p to:rgba] ) return 0.0;
+    if ( ![self extractInterpolatedRgba:p to:rgba] ) return -1;
     return ( rgba[0] + rgba[1] + rgba[2] ) * 0.33f;
 }
 

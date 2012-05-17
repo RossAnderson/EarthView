@@ -118,58 +118,74 @@
     RAPolarCoordinate upperRight = [self.imageryDatabase tileLatLonOrigin:TileOppositeCorner(page.tile)];
     
     // use more precision for large tiles
-    const int gridSize = 64;
+    const int gridSize = 32;
     const int border = 1;
+    const int totalSize = gridSize + border + border;
+    const int indexSize = totalSize - 1;
+    const double borderInterval = 1e-5;
     
-    double latInterval = ( upperRight.latitude - lowerLeft.latitude ) / (gridSize-1-border-border);
-    double lonInterval = ( upperRight.longitude - lowerLeft.longitude ) / (gridSize-1-border-border);
-    lowerLeft.latitude -= latInterval;
-    lowerLeft.longitude -= lonInterval;
+    double latInterval = ( upperRight.latitude - lowerLeft.latitude ) / (gridSize-1);
+    double lonInterval = ( upperRight.longitude - lowerLeft.longitude ) / (gridSize-1);
     
     // fits in index value?
     NSAssert( gridSize*gridSize < 65535, @"too many grid elements" );
 
     const NSUInteger vertexElements = 8;
-    size_t vertexDataSize = vertexElements*sizeof(GLfloat) * gridSize*gridSize;
-    GLfloat * vertexData = (GLfloat *)calloc(gridSize*gridSize, vertexElements*sizeof(GLfloat));
+    size_t vertexDataSize = vertexElements*sizeof(GLfloat) * totalSize*totalSize;
+    GLfloat * vertexData = (GLfloat *)calloc(totalSize*totalSize, vertexElements*sizeof(GLfloat));
     
     const NSUInteger indexElements = 6;
-    size_t indexDataSize = indexElements*sizeof(GLushort) * (gridSize-1)*(gridSize-1);
-    GLushort * indexData = (GLushort *)calloc((gridSize-1)*(gridSize-1), indexElements*sizeof(GLushort));
+    size_t indexDataSize = indexElements*sizeof(GLushort) * indexSize*indexSize;
+    GLushort * indexData = (GLushort *)calloc(indexSize*indexSize, indexElements*sizeof(GLushort));
     
     RAImageSampler * sampler = [[RAImageSampler alloc] initWithImage:hgtPage.terrain];
         
     size_t vertexDataPos = 0;
     size_t indexDataPos = 0;
+    BOOL isPartOfSkirt = NO;
 
     // calculate mesh vertices and indices
-    for( unsigned int gy = 0; gy < gridSize; gy++ ) {
-        for( unsigned int gx = 0; gx < gridSize; gx++ ) {
+    for( int gy = 0; gy < totalSize; gy++ ) {
+        for( int gx = 0; gx < totalSize; gx++ ) {
             RAPolarCoordinate gpos;
-            gpos.latitude = lowerLeft.latitude + gy*latInterval;
-            gpos.longitude = lowerLeft.longitude + gx*lonInterval;
+
+            isPartOfSkirt = ( gx < border || gy < border || gx > gridSize || gy > gridSize );
+            
+            if ( gx < border )
+                gpos.longitude = lowerLeft.longitude - borderInterval;
+            else if ( gx > gridSize )
+                gpos.longitude = upperRight.longitude + borderInterval;
+            else
+                gpos.longitude = lowerLeft.longitude + (gx-border)*lonInterval;
+            
+            if ( gy < border )
+                gpos.latitude = lowerLeft.latitude - borderInterval;
+            else if ( gy > gridSize )
+                gpos.latitude = upperRight.latitude + borderInterval;
+            else
+                gpos.latitude = lowerLeft.latitude + (gy-border)*latInterval;
+
             gpos.height = lowerLeft.height;
 
             GLKVector3 ecef = ConvertPolarToEcef(gpos);
             GLKVector2 tex = [self.imageryDatabase textureCoordsForLatLon:gpos inTile:texPage.tile];
             
             GLKVector3 normal = GLKVector3Normalize(ecef);
-            float height = 0.0f;
             
-            if ( gx < border || gy < border || gx > gridSize-1-border || gy > gridSize-1-border )
-                height = -0.2f;    // skirt
-            else if ( sampler ) {
-                GLKVector2 hgtPixel = [self.imageryDatabase textureCoordsForLatLon:gpos inTile:hgtPage.tile];
-                hgtPixel.x = (hgtPage.terrain.size.width-1) * hgtPixel.x;
-                hgtPixel.y = (hgtPage.terrain.size.height-1) * hgtPixel.y;
+            // extrude as appropriate
+            float extrude = 0.0f;
+            
+            if ( isPartOfSkirt ) {
+                extrude = -0.0001f;    // skirt
+            } else if ( sampler ) {
+                GLKVector2 hgtPixel = [self.terrainDatabase textureCoordsForLatLon:gpos inTile:hgtPage.tile];
 
-                CGPoint p = CGPointMake(hgtPixel.x, hgtPixel.y);
-
-                height = 0.015f * [sampler grayByInterpolatingPixels:p];
+                CGPoint p = CGPointMake((sampler.width-1) * hgtPixel.x, 
+                                        (sampler.height-1) * hgtPixel.y );
+                extrude = 0.015f * [sampler grayByInterpolatingPixels:p];
             }
             
-            // extrude by height
-            ecef = GLKVector3Add( ecef, GLKVector3MultiplyScalar(normal, height) );
+            ecef = GLKVector3Add( ecef, GLKVector3MultiplyScalar(normal, extrude) );
             
             // fill vertex data
             vertexData[vertexDataPos+0] = ecef.x;
@@ -183,15 +199,15 @@
             vertexData[vertexDataPos+6] = tex.x;
             vertexData[vertexDataPos+7] = tex.y;
             
-            if ( gx < gridSize-1 && gy < gridSize-1 ) {
-                GLushort baseElement = gy*gridSize + gx;
+            if ( gx < indexSize && gy < indexSize ) {
+                GLushort baseElement = gy*totalSize + gx;
                 indexData[indexDataPos+0] = baseElement;
                 indexData[indexDataPos+1] = baseElement + 1;
-                indexData[indexDataPos+2] = baseElement + gridSize;
+                indexData[indexDataPos+2] = baseElement + totalSize;
                 
                 indexData[indexDataPos+3] = baseElement + 1;
-                indexData[indexDataPos+4] = baseElement + gridSize + 1;
-                indexData[indexDataPos+5] = baseElement + gridSize;
+                indexData[indexDataPos+4] = baseElement + totalSize + 1;
+                indexData[indexDataPos+5] = baseElement + totalSize;
                 
                 indexDataPos += indexElements;
             }
@@ -200,15 +216,15 @@
         }
     }
 
-    NSAssert( vertexDataPos == vertexElements*gridSize*gridSize, @"didn't fill vertex array" );
-    NSAssert( indexDataPos == indexElements*(gridSize-1)*(gridSize-1), @"didn't fill index array" );
+    NSAssert( vertexDataPos == vertexElements*totalSize*totalSize, @"didn't fill vertex array" );
+    NSAssert( indexDataPos == indexElements*indexSize*indexSize, @"didn't fill index array" );
     
     // calculate normals
-    const int rowOffset = vertexElements * gridSize;
+    const int rowOffset = vertexElements * totalSize;
     GLKVector3 ecef0, ecef1;
     int offset = 0;
-    for( unsigned int gy = border; gy < gridSize-border; gy++ ) {
-        for( unsigned int gx = border; gx < gridSize-border; gx++ ) {
+    for( unsigned int gy = border; gy < totalSize-border; gy++ ) {
+        for( unsigned int gx = border; gx < totalSize-border; gx++ ) {
             GLKVector3 vectorLeft, vectorRight;
             
             // index of center element
@@ -217,14 +233,14 @@
             // eastward component
             offset = ( gx > border ) ? -vertexElements : 0;
             ecef0 = GLKVector3Make( vertexData[vertexDataPos+offset+0], vertexData[vertexDataPos+offset+1], vertexData[vertexDataPos+offset+2] );
-            offset = ( gx < gridSize-1-border ) ? vertexElements : 0;
+            offset = ( gx < gridSize ) ? vertexElements : 0;
             ecef1 = GLKVector3Make( vertexData[vertexDataPos+offset+0], vertexData[vertexDataPos+offset+1], vertexData[vertexDataPos+offset+2] );
             vectorLeft = GLKVector3Subtract(ecef1, ecef0);
             
             // northward component
             offset = ( gy > border ) ? -rowOffset : 0;
             ecef0 = GLKVector3Make( vertexData[vertexDataPos+offset+0], vertexData[vertexDataPos+offset+1], vertexData[vertexDataPos+offset+2] );
-            offset = ( gy < gridSize-1-border ) ? rowOffset : 0;
+            offset = ( gy < gridSize ) ? rowOffset : 0;
             ecef1 = GLKVector3Make( vertexData[vertexDataPos+offset+0], vertexData[vertexDataPos+offset+1], vertexData[vertexDataPos+offset+2] );
             vectorRight = GLKVector3Subtract(ecef1, ecef0);
 
@@ -236,7 +252,7 @@
             vertexData[vertexDataPos+5] = normal.z;
         }
     }
-        
+    
     [geom setObjectData:vertexData withSize:vertexDataSize withStride:(vertexElements*sizeof(GLfloat))];
     [geom setIndexData:indexData withSize:indexDataSize withStride:sizeof(GLushort)];
     
@@ -458,8 +474,8 @@
     if ( page.tile.z >= self.imageryDatabase.maxzoom )
         texelError = 0.0f; // force display at maximum zoom level
     
-    // should we traverse to find more detail?
-    if ( texelError > 3.0f ) {
+    // should we traverse to load more detail?
+    if ( texelError > 6.0f ) {
         // traverse children
         [self preparePageForTraversal:page];
         

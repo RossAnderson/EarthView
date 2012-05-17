@@ -157,6 +157,7 @@ static int64_t sGeometryObjectCount = 0;
         
         _color = GLKVector4Make(-1, -1, -1, -1);
         _elementStyle = GL_TRIANGLES;
+        //_elementStyle = GL_LINES;
         
         _vertexDataDirty = _indexDataDirty = YES;
         

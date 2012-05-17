@@ -68,7 +68,6 @@ enum
         shader = [[RAShaderProgram alloc] init];
         
         self.camera = [RACamera new];
-        self.camera.projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(65.0f), 1, 1, 100);
         self.camera.modelViewMatrix = GLKMatrix4Identity;
         
         self.lightPosition = GLKVector3Make(1.0, 1.0, 1.0);
@@ -194,7 +193,7 @@ enum
     float texelError = [page calculateScreenSpaceErrorWithCamera:self.camera];
     
     // should we choose to display this page?
-    if ( texelError < 3.0f && page.isReady ) {
+    if ( texelError < 6.0f && page.isReady ) {
         [self applyGeometry: page.geometry];
         return YES;
     }

@@ -35,10 +35,11 @@ This project has no dependencies beyond the iOS 5 SDK. It has been tested to wor
 
 The example application connects to various map tile services over the web such as MapBox or OpenSteetMap as defined in DRAppDelegate.m. There is no local data stored with the application, so an Internet connection on your device is required.
 
-Bugs and Limitations
+Bugs, Limitations, and Todos
 --------------------
 
+- The terrain data appears to be mis-aligned to the map.
 - The derived bounding spheres don't appear to be calculated correctly.
-- Performance gets worse when the camera is zoomed in. I think this is because offscreen nodes are not properly skipped in the scene graph.
 - There are holes in the globe at the poles because there is no map tile content there.
 - The tilt control should bounce when you hit the hard stops.
+- The star box should fade into a blue sky box as the user zooms the camera in.

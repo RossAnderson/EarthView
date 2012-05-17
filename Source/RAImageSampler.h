@@ -10,6 +10,9 @@
 
 @interface RAImageSampler : NSObject
 
+@property (readonly) NSUInteger width;
+@property (readonly) NSUInteger height;
+
 - (id)initWithImage:(UIImage *)img;
 
 - (CGFloat)grayAtNearestPixel:(CGPoint)p;

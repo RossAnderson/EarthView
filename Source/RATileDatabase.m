@@ -55,6 +55,12 @@ TileID TileOppositeCorner( TileID t ) {
     
     p.x -= t.x * TileSize;
     p.y -= t.y * TileSize;
+    
+    // clip to tile bounds
+    if ( p.x < 0 ) p.x = 0;
+    if ( p.y < 0 ) p.y = 0;
+    if ( p.x > TileSize ) p.x = TileSize;
+    if ( p.y > TileSize ) p.y = TileSize;
 
     return GLKVector2Make( p.x/TileSize, p.y/TileSize );
 }

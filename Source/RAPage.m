@@ -60,18 +60,20 @@ static NSUInteger sTotalPageCount = 0;
 }
 
 - (float)calculateScreenSpaceErrorWithCamera:(RACamera *)camera {
-    // in this case, should test all four corners of the tile and take min distance
     GLKVector3 center = GLKMatrix4MultiplyAndProjectVector3( camera.modelViewMatrix, self.bound.center );
-    double distance = GLKVector3Length(center); // !!! this does not work so well on large, curved pages
-    //double distance = -center.z;  // seem like this should be more accurate, but the math isn't quite right. It favors pages near the equator
-        
-    // !!! this should be based upon the Camera parameters
-    double theta = GLKMathDegreesToRadians(65.0f);
-    double w = 2. * distance * tan(theta/2.);
+    double distance = GLKVector3Length(center);
+    
+    /*
+    const GLKMatrix4 m = camera.modelViewMatrix;
+    GLKVector3 cameraPos = GLKVector3Make( m.m[12], m.m[13], m.m[14] );
+    float distance = GLKVector3Distance(cameraPos, self.bound.center);
+     */
     
     // convert object error to screen error
-    double x = camera.viewport.size.width;    // screen size
-    double epsilon = ( 2. * self.bound.radius ) / 256.;    // object error
+    CGSize size = camera.viewport.size;
+    float epsilon = ( 2. * self.bound.radius ) / 256.;    // object error
+    float x = MAX(size.width, size.height) * [[UIScreen mainScreen] scale];    // screen size
+    float w = 2. * distance * camera.tanThetaOverTwo;
     return ( epsilon * x ) / w;
 }
 

@@ -9,11 +9,19 @@
 #import <Foundation/Foundation.h>
 #import <GLKit/GLKit.h>
 
+#import "RABoundingSphere.h"
+
 
 @interface RACamera : NSObject
 
+@property (assign) float fieldOfView;   // degrees
+
 @property (assign) GLKMatrix4 modelViewMatrix;
-@property (assign) GLKMatrix4 projectionMatrix;
+@property (readonly) GLKMatrix4 projectionMatrix;
 @property (assign) CGRect viewport;
+
+@property (readonly) float tanThetaOverTwo;
+
+- (void)calculateProjectionForBounds:(RABoundingSphere *)bound;
 
 @end

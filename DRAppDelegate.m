@@ -46,13 +46,24 @@
     
     switch( IMAGERY_DATASET ) {
         case 1:
-            // Dancing Robots Streets: https://tiles.mapbox.com/v3/dancingrobots.map-zlkx39ti.jsonp
-            database.baseUrlStrings = [NSArray arrayWithObjects:
-                                       @"http://a.tiles.mapbox.com/v3/dancingrobots.map-zlkx39ti/{z}/{x}/{y}.png",
-                                       @"http://b.tiles.mapbox.com/v3/dancingrobots.map-zlkx39ti/{z}/{x}/{y}.png",
-                                       @"http://c.tiles.mapbox.com/v3/dancingrobots.map-zlkx39ti/{z}/{x}/{y}.png",
-                                       @"http://d.tiles.mapbox.com/v3/dancingrobots.map-zlkx39ti/{z}/{x}/{y}.png",
-                                       nil];
+            if ( [[UIScreen mainScreen] scale] > 1.5 ) {
+                NSLog(@"Retina");
+                // Dancing Robots Streets Retina: https://tiles.mapbox.com/v3/dancingrobots.map-lqzbpv0l.jsonp
+                database.baseUrlStrings = [NSArray arrayWithObjects:
+                   @"http://a.tiles.mapbox.com/v3/dancingrobots.map-lqzbpv0l/{z}/{x}/{y}.png",
+                   @"http://b.tiles.mapbox.com/v3/dancingrobots.map-lqzbpv0l/{z}/{x}/{y}.png",
+                   @"http://c.tiles.mapbox.com/v3/dancingrobots.map-lqzbpv0l/{z}/{x}/{y}.png",
+                   @"http://d.tiles.mapbox.com/v3/dancingrobots.map-lqzbpv0l/{z}/{x}/{y}.png",
+                   nil];
+            } else {
+                // Dancing Robots Streets: https://tiles.mapbox.com/v3/dancingrobots.map-zlkx39ti.jsonp
+                database.baseUrlStrings = [NSArray arrayWithObjects:
+                   @"http://a.tiles.mapbox.com/v3/dancingrobots.map-zlkx39ti/{z}/{x}/{y}.png",
+                   @"http://b.tiles.mapbox.com/v3/dancingrobots.map-zlkx39ti/{z}/{x}/{y}.png",
+                   @"http://c.tiles.mapbox.com/v3/dancingrobots.map-zlkx39ti/{z}/{x}/{y}.png",
+                   @"http://d.tiles.mapbox.com/v3/dancingrobots.map-zlkx39ti/{z}/{x}/{y}.png",
+                   nil];
+            }
             database.maxzoom = 17;
             break;
             

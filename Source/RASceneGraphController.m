@@ -64,11 +64,7 @@
 {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
-        // !!! why does this cause gestures to fail?
-        //self.preferredFramesPerSecond = 60;
-        
         _camera = [RACamera new];
-        _camera.projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(65.0f), 1, 1, 100);
         _camera.modelViewMatrix = GLKMatrix4Identity;
         
         _manipulator = [RAManipulator new];
@@ -132,6 +128,7 @@
 
     [self.pager setup];
     [self setupGL];
+    [self update];
 }
 
 - (void)viewDidUnload
@@ -319,24 +316,13 @@
     };
     GLKVector3 lightEcef = ConvertPolarToEcef( lightPolar );
     _renderVisitor.lightPosition = lightEcef;
-    
-    // !!! the scene view bound is incorrect
-    
-    // calculate min/max scene distance
-    GLKVector3 center = GLKMatrix4MultiplyAndProjectVector3(self.camera.modelViewMatrix, self.sceneRoot.bound.center);
-    float minDistance = -center.z - self.sceneRoot.bound.radius;
-    float maxDistance = -center.z + self.sceneRoot.bound.radius;
-    //NSLog(@"Z Buffer: %f - %f, Scene Radius: %f", minDistance, maxDistance, self.sceneRoot.bound.radius);
-    if ( minDistance < 0.001f ) minDistance = 0.001f;
-    if ( maxDistance < 60.0f ) maxDistance = 60.0f; // room for skybox
-    
-    // update projection
-    float aspect = fabsf(self.view.bounds.size.width / self.view.bounds.size.height);
-    GLKMatrix4 projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(65.0f), aspect, minDistance, maxDistance);
-    
-    self.camera.projectionMatrix = projectionMatrix;
+        
     self.camera.viewport = self.view.bounds;
+    [_camera calculateProjectionForBounds: self.sceneRoot.bound];
     
+    // update skybox projection
+    float aspect = fabsf(self.view.bounds.size.width / self.view.bounds.size.height);
+    GLKMatrix4 projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(_camera.fieldOfView), aspect, 10, 50);
     _skybox.transform.projectionMatrix = projectionMatrix;
     _skybox.transform.modelviewMatrix = self.camera.modelViewMatrix;
 }
@@ -352,6 +338,8 @@
     [_skybox prepareToDraw];
     [_skybox draw];
     
+    glClear(GL_DEPTH_BUFFER_BIT);
+
     // run the render visitor
     [_renderVisitor clear];
     [self.sceneRoot accept: _renderVisitor];

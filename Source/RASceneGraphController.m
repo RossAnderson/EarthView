@@ -16,10 +16,8 @@
 #import "RARenderVisitor.h"
 #import "RAGeographicUtils.h"
 
-#import "RAManipulator.h"
 #import "RATileDatabase.h"
 #import "RATilePager.h"
-#import "RAWorldTour.h"
 
 
 #pragma mark -
@@ -39,8 +37,6 @@
 
 @interface RASceneGraphController () {
     RARenderVisitor *   _renderVisitor;
-    RAManipulator *     _manipulator;
-    RAWorldTour *       _tourController;
     
     EAGLContext *       _context;
     GLKSkyboxEffect *   _skybox;
@@ -56,23 +52,27 @@
 
 @implementation RASceneGraphController
 
+@synthesize context = _context;
 @synthesize sceneRoot = _sceneRoot;
 @synthesize camera = _camera;
 @synthesize pager = _pager;
+@synthesize manipulator = _manipulator;
+
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
+        // setup scene
         _camera = [RACamera new];
         _camera.modelViewMatrix = GLKMatrix4Identity;
         
         _manipulator = [RAManipulator new];
         _manipulator.camera = self.camera;
-
+        
         _renderVisitor = [RARenderVisitor new];
         _renderVisitor.camera = self.camera;
-
+        
         RATileDatabase * database = [RATileDatabase new];
         database.bounds = CGRectMake( -180,-90,360,180 );
         database.googleTileConvention = YES;
@@ -86,15 +86,14 @@
         _pager = [RATilePager new];
         _pager.imageryDatabase = database;
         _pager.camera = self.camera;
-        
-        _needsDisplay = YES;
-}
+    }
     return self;
 }
 
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    [_manipulator addGesturesToView: self.view];
         
     _context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
     
@@ -106,27 +105,17 @@
     view.context = _context;
     view.delegate = self;
     view.drawableDepthFormat = GLKViewDrawableDepthFormat24;
-    view.drawableMultisample = GLKViewDrawableMultisample4X;
-    
-    _manipulator.view = self.view;
-    
+    //view.drawableMultisample = GLKViewDrawableMultisample4X;
+        
     // setup display link to update the view
     _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(displayLinkUpdate:)];
     [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
     
-    // create another context for threaded operations
-    self.pager.auxilliaryContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:[_context sharegroup]];
     
-    // add world tour
-    _tourController = [RAWorldTour new];
-    _tourController.manipulator = _manipulator;
-
-    UITapGestureRecognizer * recognizer = [[UITapGestureRecognizer alloc] initWithTarget:_tourController action:@selector(startOrStop:)];
-	[recognizer setNumberOfTapsRequired:4];
-	[self.view addGestureRecognizer:recognizer];
-    //[tourController start: self];
-
-    [self.pager setup];
+    _pager.auxilliaryContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:[_context sharegroup]]; // another context for threaded operations
+    [_pager setup];
+    
+    _needsDisplay = YES;
     [self setupGL];
     [self update];
 }
@@ -155,6 +144,9 @@
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
+    if ( self.view.window.screen && self.view.window.screen != [UIScreen mainScreen] )
+        return NO;
+    
     if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
         return (interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown);
     } else {
@@ -187,75 +179,6 @@
 }
 
 #pragma mark - Scene Graph
-
-- (RAGeometry *)makeBoxWithHalfWidth:(GLfloat)half
-{
-    typedef struct {
-        GLfloat Position[3];
-        GLfloat Normal[3];
-    } Vertex;
-    
-    const Vertex Vertices[] = {
-        {{half, -half, -half},  {1.0f, 0.0f, 0.0f} },
-        {{half, half, -half},   {1.0f, 0.0f, 0.0f} },
-        {{half, -half, half},   {1.0f, 0.0f, 0.0f} },
-        {{half, -half, half},   {1.0f, 0.0f, 0.0f} },
-        {{half, half, -half},   {1.0f, 0.0f, 0.0f} },
-        {{half, half, half},    {1.0f, 0.0f, 0.0f} },
-        
-        {{half, half, -half},   {0.0f, 1.0f, 0.0f} },
-        {{-half, half, -half},  {0.0f, 1.0f, 0.0f} },
-        {{half, half, half},    {0.0f, 1.0f, 0.0f} },
-        {{half, half, half},    {0.0f, 1.0f, 0.0f} },
-        {{-half, half, -half},  {0.0f, 1.0f, 0.0f} },
-        {{-half, half, half},   {0.0f, 1.0f, 0.0f} },
-        
-        {{-half, half, -half},  {-1.0f, 0.0f, 0.0f} },
-        {{-half, -half, -half}, {-1.0f, 0.0f, 0.0f} },
-        {{-half, half, half},   {-1.0f, 0.0f, 0.0f} },
-        {{-half, half, half},   {-1.0f, 0.0f, 0.0f} },
-        {{-half, -half, -half}, {-1.0f, 0.0f, 0.0f} },
-        {{-half, -half, half},  {-1.0f, 0.0f, 0.0f} },
-        
-        {{-half, -half, -half}, {0.0f, -1.0f, 0.0f} },
-        {{half, -half, -half},  {0.0f, -1.0f, 0.0f} },
-        {{-half, -half, half},  {0.0f, -1.0f, 0.0f} },
-        {{-half, -half, half},  {0.0f, -1.0f, 0.0f} },
-        {{half, -half, -half},  {0.0f, -1.0f, 0.0f} },
-        {{half, -half, half},   {0.0f, -1.0f, 0.0f} },
-        
-        {{half, half, half},    {0.0f, 0.0f, 1.0f} },
-        {{-half, half, half},   {0.0f, 0.0f, 1.0f} },
-        {{half, -half, half},   {0.0f, 0.0f, 1.0f} },
-        {{half, -half, half},   {0.0f, 0.0f, 1.0f} },
-        {{-half, half, half},   {0.0f, 0.0f, 1.0f} },
-        {{-half, -half, half},  {0.0f, 0.0f, 1.0f} },
-        
-        {{half, -half, -half},  {0.0f, 0.0f, -1.0f} },
-        {{-half, -half, -half}, {0.0f, 0.0f, -1.0f} },
-        {{half, half, -half},   {0.0f, 0.0f, -1.0f} },
-        {{half, half, -half},   {0.0f, 0.0f, -1.0f} },
-        {{-half, -half, -half}, {0.0f, 0.0f, -1.0f} },
-        {{-half, half, -half},  {0.0f, 0.0f, -1.0f} }
-    };
-    
-    const GLubyte Indices[] = {
-        0, 1, 2,  3, 4, 5,
-        6, 7, 8,  9, 10, 11,
-        12, 13, 14,  15, 16, 17,
-        18, 19, 20,  21, 22, 23,
-        24, 25, 26,  27, 28, 29,
-        30, 31, 32, 33, 34, 35
-    };
-    
-    RAGeometry * geom = [RAGeometry new];
-    [geom setObjectData:Vertices withSize:sizeof(Vertices) withStride:sizeof(Vertex)];
-    geom.positionOffset = offsetof(Vertex, Position);
-    geom.normalOffset = offsetof(Vertex, Normal);
-    [geom setIndexData:Indices withSize:sizeof(Indices) withStride:sizeof(GLubyte)];
-    
-    return geom;
-}
 
 - (RANode *)createBlueMarble
 {

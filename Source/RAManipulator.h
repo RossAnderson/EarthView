@@ -15,8 +15,6 @@
 
 @interface RAManipulator : NSObject <UIGestureRecognizerDelegate>
 
-@property (weak) UIView * view;
-
 @property (strong) RACamera * camera;
 
 // animatable
@@ -25,6 +23,8 @@
 @property (assign) double azimuth;
 @property (assign) double elevation;
 @property (assign) double distance;
+
+- (void)addGesturesToView:(UIView *)view;
 
 - (GLKMatrix4)modelViewMatrix;
 

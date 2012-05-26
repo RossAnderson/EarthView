@@ -9,6 +9,7 @@
 #import "DRAppDelegate.h"
 
 #import "RASceneGraphController.h"
+#import "RAWorldTour.h"
 
 // NOTICE:
 // The imagery tile sets below are for example use only. Please consult with the 
@@ -19,7 +20,9 @@
 #define TERRAIN_DATASET 1
 
 
-@implementation DRAppDelegate
+@implementation DRAppDelegate {
+    RAWorldTour * tourController;
+}
 
 @synthesize window = _window;
 @synthesize viewController = _viewController;
@@ -70,11 +73,11 @@
         case 2:
             // MapBox Streets: http://tiles.mapbox.com/v3/mapbox.mapbox-streets.jsonp
             database.baseUrlStrings = [NSArray arrayWithObjects:
-                                       @"http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
-                                       @"http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
-                                       @"http://c.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
-                                       @"http://d.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
-                                       nil];
+               @"http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
+               @"http://b.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
+               @"http://c.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
+               @"http://d.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png",
+               nil];
             database.maxzoom = 17;
             break;
             
@@ -139,6 +142,15 @@
             break;
     }
     self.viewController.pager.terrainDatabase = database;
+    
+    // add world tour
+    tourController = [RAWorldTour new];
+    tourController.manipulator = self.viewController.manipulator;
+    
+    UITapGestureRecognizer * recognizer = [[UITapGestureRecognizer alloc] initWithTarget:tourController action:@selector(startOrStop:)];
+	[recognizer setNumberOfTapsRequired:4];
+	[self.viewController.view addGestureRecognizer:recognizer];
+    //[tourController start: self];
     
     self.window.rootViewController = self.viewController;
     [self.window makeKeyAndVisible];

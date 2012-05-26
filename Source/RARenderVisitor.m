@@ -193,7 +193,7 @@ enum
     float texelError = [page calculateScreenSpaceErrorWithCamera:self.camera];
     
     // should we choose to display this page?
-    if ( texelError < 6.0f && page.isReady ) {
+    if ( texelError < 5.0f && page.isReady ) {
         [self applyGeometry: page.geometry];
         return YES;
     }

@@ -475,7 +475,7 @@
         texelError = 0.0f; // force display at maximum zoom level
     
     // should we traverse to load more detail?
-    if ( texelError > 6.0f ) {
+    if ( texelError > 5.0f ) {
         // traverse children
         [self preparePageForTraversal:page];
         

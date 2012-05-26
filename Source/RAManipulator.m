@@ -39,7 +39,6 @@ typedef enum {
 @implementation RAManipulator {
     CameraState     _state;
     
-    UIView *        _view;
     BOOL            _needsDisplay;
 }
 
@@ -54,13 +53,7 @@ typedef enum {
     return self;
 }
 
-- (UIView *)view {
-    return _view;
-}
-
-- (void)setView:(UIView *)view {
-    _view = view;
-    
+- (void)addGesturesToView:(UIView *)view {
     self.latitude = kFreshPondCoord.latitude;
     self.longitude = kFreshPondCoord.longitude;
     self.distance = kFreshPondCoord.height;
@@ -85,6 +78,8 @@ typedef enum {
 	[stopRecognizer setNumberOfTapsRequired:1];
 	[stopRecognizer setDelegate:self];
 	[view addGestureRecognizer:stopRecognizer];
+
+    _needsDisplay = YES;
 }
 
 - (double)latitude {
@@ -266,6 +261,7 @@ typedef enum {
 
 - (void)move:(id)sender {
     UIPanGestureRecognizer * pan = (UIPanGestureRecognizer*)sender;
+    UIView * view = pan.view;
     
     static GestureAction sAction;
     static CGPoint startLocation;
@@ -273,7 +269,7 @@ typedef enum {
     static double cursorLatitude, cursorLongitude;
     static int touchCount;
     
-    CGPoint pt = [pan locationInView:self.view];
+    CGPoint pt = [pan locationInView:view];
 
     switch( [pan state] ) {
         case UIGestureRecognizerStatePossible:
@@ -287,13 +283,13 @@ typedef enum {
         {
             [self stop:nil];
 
-            CGFloat yThresh = self.view.bounds.size.height / 10.;
-            CGFloat xThresh = self.view.bounds.size.width / 10.;
+            CGFloat yThresh = view.bounds.size.height / 10.;
+            CGFloat xThresh = view.bounds.size.width / 10.;
 
             // pick the right gesture
-            if ( pt.y > self.view.bounds.size.height - yThresh ) 
+            if ( pt.y > view.bounds.size.height - yThresh ) 
                 sAction = GestureRotate;
-            else if ( pt.x > self.view.bounds.size.width - xThresh )
+            else if ( pt.x > view.bounds.size.width - xThresh )
                 sAction = GestureTilt;
             else {
                 // get the current touch position on the globe
@@ -352,7 +348,7 @@ typedef enum {
         }
         case UIGestureRecognizerStateEnded:
         {
-            CGPoint vel = [pan velocityInView:self.view];
+            CGPoint vel = [pan velocityInView:view];
             
             switch (sAction) {
                 case GestureRotate:
@@ -455,8 +451,9 @@ typedef enum {
 
 - (void)zoomToLocation:(id)sender {
     UITapGestureRecognizer * tap = (UITapGestureRecognizer*)sender;
+    UIView * view = tap.view;
     
-    CGPoint pt = [tap locationInView:self.view];
+    CGPoint pt = [tap locationInView:view];
     double lat, lon;
     
     // get the current touch position on the globe

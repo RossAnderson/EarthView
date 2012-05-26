@@ -68,7 +68,6 @@ enum
         shader = [[RAShaderProgram alloc] init];
         
         self.camera = [RACamera new];
-        self.camera.modelViewMatrix = GLKMatrix4Identity;
         
         self.lightPosition = GLKVector3Make(1.0, 1.0, 1.0);
         self.lightAmbientColor = GLKVector4Make(0.1, 0.1, 0.1, 1.0);

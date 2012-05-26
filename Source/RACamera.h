@@ -14,12 +14,11 @@
 
 @interface RACamera : NSObject
 
-@property (assign) float fieldOfView;   // degrees
-
-@property (assign) GLKMatrix4 modelViewMatrix;
-@property (readonly) GLKMatrix4 projectionMatrix;
 @property (assign) CGRect viewport;
+@property (assign) float fieldOfView;   // degrees
+@property (assign) GLKMatrix4 modelViewMatrix;
 
+@property (readonly) GLKMatrix4 projectionMatrix;
 @property (readonly) float tanThetaOverTwo;
 
 - (void)calculateProjectionForBounds:(RABoundingSphere *)bound;

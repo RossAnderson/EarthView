@@ -13,6 +13,9 @@
 #import "RACamera.h"
 #import "RAGeographicUtils.h"
 
+extern NSString * RAManipulatorStateChangedNotification;
+
+
 @interface RAManipulator : NSObject <UIGestureRecognizerDelegate>
 
 @property (strong) RACamera * camera;
@@ -27,7 +30,5 @@
 - (void)addGesturesToView:(UIView *)view;
 
 - (GLKMatrix4)modelViewMatrix;
-
-- (BOOL)needsDisplay;
 
 @end

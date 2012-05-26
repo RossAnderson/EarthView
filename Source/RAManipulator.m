@@ -18,6 +18,8 @@ static const RAPolarCoordinate kDefaultVelocity = { 0, -10, 0 };
 static const CGFloat kAnimationDuration = 1.0f;
 static const CGFloat kMinimumAnimatedAngle = 2.0f;
 
+NSString * RAManipulatorStateChangedNotification = @"RAManipulatorStateChangedNotification";
+
 
 typedef struct {
     double  latitude;      // all angles in degrees
@@ -38,8 +40,6 @@ typedef enum {
 
 @implementation RAManipulator {
     CameraState     _state;
-    
-    BOOL            _needsDisplay;
 }
 
 @synthesize camera;
@@ -48,7 +48,6 @@ typedef enum {
 {
     self = [super init];
     if (self) {
-        _needsDisplay = YES;
     }
     return self;
 }
@@ -78,8 +77,10 @@ typedef enum {
 	[stopRecognizer setNumberOfTapsRequired:1];
 	[stopRecognizer setDelegate:self];
 	[view addGestureRecognizer:stopRecognizer];
+}
 
-    _needsDisplay = YES;
+- (void)stateUpdated {
+    [[NSNotificationCenter defaultCenter] postNotificationName:RAManipulatorStateChangedNotification object:self];
 }
 
 - (double)latitude {
@@ -90,7 +91,7 @@ typedef enum {
     NSAssert( !isnan(latitude), @"angle cannot be NAN" );
     
     _state.latitude = NormalizeLatitude(latitude);
-    _needsDisplay = YES;
+    [self stateUpdated];
 }
 
 - (double)longitude {
@@ -101,7 +102,7 @@ typedef enum {
     NSAssert( !isnan(longitude), @"angle cannot be NAN" );
     
     _state.longitude = NormalizeLongitude(longitude);
-    _needsDisplay = YES;
+    [self stateUpdated];
 }
 
 - (double)azimuth {
@@ -112,7 +113,7 @@ typedef enum {
     NSAssert( !isnan(azimuth), @"angle cannot be NAN" );
 
     _state.azimuth = NormalizeLongitude(azimuth);
-    _needsDisplay = YES;
+    [self stateUpdated];
 }
 
 - (double)elevation {
@@ -125,7 +126,7 @@ typedef enum {
     if ( elevation > 90. ) elevation = 90.;
     
     _state.elevation = elevation;
-    _needsDisplay = YES;
+    [self stateUpdated];
 }
 
 - (double)distance {
@@ -138,24 +139,8 @@ typedef enum {
     if ( distance > 1.e7 ) distance = 1.e7;
     
     _state.distance = distance;
-    _needsDisplay = YES;
+    [self stateUpdated];
 }
-
-- (BOOL)needsDisplay {
-    BOOL flag = _needsDisplay;
-    _needsDisplay = NO;
-    return flag;
-}
-
-/*
-- (NSString *)stringFromMatrix:(GLKMatrix4)m {
-    return [NSString stringWithFormat:@"%f %f %f %f,\n%f %f %f %f,\n%f %f %f %f,\n%f %f %f %f",
-            m.m00, m.m01, m.m02, m.m03,
-            m.m10, m.m11, m.m12, m.m13,
-            m.m20, m.m21, m.m22, m.m23,
-            m.m30, m.m31, m.m32, m.m33];
-}
-*/
 
 - (GLKMatrix4)modelViewMatrixForState:(CameraState)aState {
     RAPolarCoordinate   surfaceCoord = { self.latitude, self.longitude, 0 };
@@ -224,7 +209,7 @@ typedef enum {
         case UIGestureRecognizerStateCancelled:
         case UIGestureRecognizerStateFailed:
             _state = startState;
-            _needsDisplay = YES;
+            [self stateUpdated];
             break;
         case UIGestureRecognizerStateBegan:
             [self stop:nil];
@@ -277,7 +262,7 @@ typedef enum {
         case UIGestureRecognizerStateCancelled:
         case UIGestureRecognizerStateFailed:
             _state = startState;
-            _needsDisplay = YES;
+            [self stateUpdated];
             break;
         case UIGestureRecognizerStateBegan:
         {

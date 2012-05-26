@@ -43,6 +43,7 @@
     CADisplayLink *     _displayLink;
     
     BOOL                _needsDisplay;
+    BOOL                _needsUpdate;
 }
 
 - (void)setupGL;
@@ -65,7 +66,6 @@
     if (self) {
         // setup scene
         _camera = [RACamera new];
-        _camera.modelViewMatrix = GLKMatrix4Identity;
         
         _manipulator = [RAManipulator new];
         _manipulator.camera = self.camera;
@@ -104,6 +104,7 @@
     GLKView *view = (GLKView *)self.view;
     view.context = _context;
     view.delegate = self;
+    view.enableSetNeedsDisplay = NO;
     view.drawableDepthFormat = GLKViewDrawableDepthFormat24;
     //view.drawableMultisample = GLKViewDrawableMultisample4X;
         
@@ -111,11 +112,14 @@
     _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(displayLinkUpdate:)];
     [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
     
-    
-    _pager.auxilliaryContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:[_context sharegroup]]; // another context for threaded operations
+    // setup auxillary context for threaded texture loading operations
+    if ( ! _pager.auxilliaryContext ) _pager.auxilliaryContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:[_context sharegroup]];
     [_pager setup];
     
-    _needsDisplay = YES;
+    // register for notifications
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(displayNotification:) name:RAManipulatorStateChangedNotification object:_manipulator];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(displayNotification:) name:RATilePagerContentChangedNotification object:_pager];
+    
     [self setupGL];
     [self update];
 }
@@ -159,31 +163,39 @@
 }
 
 - (void)displayLinkUpdate:(CADisplayLink *)sender {
-    GLKView *view = (GLKView *)self.view;
+    if ( _needsUpdate ) {
+        [_pager requestUpdate];
+        _needsUpdate = NO;
+    }
     
-    BOOL manipulatorMoved = [_manipulator needsDisplay];
-    
-    _needsDisplay |= manipulatorMoved;
-    _needsDisplay |= [_pager needsDisplay];
-
     if ( _needsDisplay ) {
+        GLKView *view = (GLKView *)self.view;
+        
         [self update];
         [view display];
+        
+        _needsDisplay = NO;
     }
-    
-    if ( manipulatorMoved ) {
-        [_pager updateIfNeeded];
-    }
+}
 
-    _needsDisplay = NO;
+- (void)displayNotification:(NSNotification *)note {
+    if ( [[note name] isEqualToString:RAManipulatorStateChangedNotification] )
+        _needsUpdate = YES;
+    
+    _needsDisplay = YES;
 }
 
 #pragma mark - Scene Graph
 
-- (RANode *)createBlueMarble
+- (RANode *)createSceneGraphForPager:(RATilePager *)pager
 {
     RAGroup * root = [RAGroup new];
-    [root addChild: self.pager.rootNode];
+    
+    for( RAPage * page in pager.rootPages ) {
+        RAPageNode * node = [RAPageNode new];
+        node.page = page;
+        [root addChild:node];
+    }
         
     return root;
 }
@@ -213,10 +225,13 @@
     _skybox.textureCubeMap.name = starTexture.name;
     
     // set as scene
-    _sceneRoot = [self createBlueMarble];
+    _sceneRoot = [self createSceneGraphForPager:_pager];
     
     [self update];
     [_renderVisitor setupGL];
+    
+    _needsUpdate = YES;
+    _needsDisplay = YES;
 }
 
 - (void)tearDownGL

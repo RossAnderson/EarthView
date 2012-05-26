@@ -16,6 +16,8 @@
 #import "RAGeometry.h"
 #import "RACamera.h"
 
+extern NSString * RATilePagerContentChangedNotification;
+
 
 @interface RATilePager : NSObject
 
@@ -23,13 +25,10 @@
 @property (strong) RATileDatabase * terrainDatabase;
 @property (strong) EAGLContext * auxilliaryContext;
 
-@property (readonly) RAGroup * rootNode;
 @property (readonly) NSSet * rootPages;
 @property (strong) RACamera * camera;
 
 - (void)setup;  // call once the databases are configured
-- (void)updateIfNeeded;
-
-- (BOOL)needsDisplay;
+- (void)requestUpdate;
 
 @end

@@ -17,6 +17,9 @@
 #import <GLKit/GLKVector2.h>
 
 
+NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNotification";
+
+
 @interface RAPageDelta : NSObject
 @property (strong) NSSet * pagesToAdd;
 @property (strong) NSSet * pagesToRemove;
@@ -31,14 +34,12 @@
     RATextureWrapper *      _defaultTexture;
         
     NSOperationQueue *      _updateQueue;
-    //NSOperationQueue *      _connectionQueue;
     NSOperationQueue *      _graphicsQueue;
     
-    BOOL                    _needsDisplay;
     BOOL                    _updateAgain;
 }
 
-@synthesize imageryDatabase, terrainDatabase, auxilliaryContext, rootNode, rootPages, camera;
+@synthesize imageryDatabase, terrainDatabase, auxilliaryContext, rootPages, camera;
 
 - (id)init
 {
@@ -47,14 +48,9 @@
         _updateQueue = [[NSOperationQueue alloc] init];
         [_updateQueue setName:@"org.dancingrobots.traversequeue"];
 
-        //_connectionQueue = [[NSOperationQueue alloc] init];
-        //[_connectionQueue setName:@"org.dancingrobots.connectionqueue"];
-
         _graphicsQueue = [[NSOperationQueue alloc] init];
         [_graphicsQueue setName:@"org.dancingrobots.graphicsqueue"];
         [_graphicsQueue setMaxConcurrentOperationCount: 1];
-        
-        _needsDisplay = YES;
     }
     return self;
 }
@@ -62,9 +58,6 @@
 - (void)dealloc {
     [_updateQueue cancelAllOperations];
     [_updateQueue waitUntilAllOperationsAreFinished];
-    
-    //[_connectionQueue cancelAllOperations];
-    //[_connectionQueue waitUntilAllOperationsAreFinished];
 
     [_graphicsQueue cancelAllOperations];
     [_graphicsQueue waitUntilAllOperationsAreFinished];
@@ -73,7 +66,6 @@
 - (void)setup {
     // build root pages
     NSMutableSet * pages = [NSMutableSet set];
-    RAGroup * root = [RAGroup new];
     
     int basezoom = self.imageryDatabase.minzoom;
     if ( basezoom < 2 ) basezoom = 2;
@@ -84,22 +76,26 @@
     for( t.y = 0; t.y < tilecount; t.y++ ) {
         for( t.x = 0; t.x < tilecount; t.x++ ) {
             RAPage * page = [self makeLeafPageForTile:t withParent:nil];
-            RAPageNode * node = [RAPageNode new];
-            node.page = page;
-            
             [pages addObject:page];
-            [root addChild:node];
         }
     }
     
     rootPages = [NSSet setWithSet:pages];
-    rootNode = root;
+    
+    // load the default "grid" texture
+    if ( _defaultTexture == nil ) {
+        [EAGLContext setCurrentContext: self.auxilliaryContext];
+
+        UIImage * gridImage = [UIImage imageNamed:@"grid256"];
+        _defaultTexture = [[RATextureWrapper alloc] initWithImage:gridImage];
+        
+        glFlush();
+        [EAGLContext setCurrentContext: nil];
+    }
 }
 
-- (BOOL)needsDisplay {
-    BOOL flag = _needsDisplay;
-    _needsDisplay = NO;
-    return flag;
+- (void)contentUpdated {
+    [[NSNotificationCenter defaultCenter] postNotificationName:RATilePagerContentChangedNotification object:self];
 }
 
 - (RAGeometry *)createGeometryForTile:(TileID)tile
@@ -303,7 +299,7 @@
         }
             
         page.geometryState = Complete;
-        _needsDisplay = YES;
+        [self contentUpdated];
     }
 }
 
@@ -320,8 +316,6 @@
         
         if ( url == nil ) {
             page.imageryState = Failed;
-        //} else if ( _connectionQueue.operationCount > kMaxQueueDepth ) {
-        //    _outstandingRequests++;
         } else {
             page.imageryState = Loading;
             
@@ -369,7 +363,7 @@
                     
                     // mark the geometry to get refreshed
                     page.geometryState = NeedsUpdate;
-                    mySelf->_needsDisplay = YES;
+                    [mySelf contentUpdated];
 
                     glFlush();
                     [EAGLContext setCurrentContext: nil];
@@ -384,8 +378,6 @@
         
         if ( url == nil ) {
             page.terrainState = Failed;
-        //} else if ( _connectionQueue.operationCount > kMaxQueueDepth ) {
-        //    _outstandingRequests++;
         } else {
             page.terrainState = Loading;
 
@@ -430,7 +422,7 @@
 
                     // mark the geometry to get refreshed
                     page.geometryState = NeedsUpdate;
-                    mySelf->_needsDisplay = YES;
+                    [mySelf contentUpdated];
                 }];
             }];
         }
@@ -493,20 +485,18 @@
     }
 }
 
-- (void)updateIfNeeded {
-    // only traverse when all previous update operations have completed 
-    if ( _updateQueue.operationCount > 0 ) return;
-    
-    // load default texture
-    if ( _defaultTexture == nil ) {
-        UIImage * gridImage = [UIImage imageNamed:@"grid256"];
-        _defaultTexture = [[RATextureWrapper alloc] initWithImage:gridImage];
+- (void)requestUpdate {
+    // we only want one traversal running at a time, so if busy, schedule it to run again
+    if ( _updateQueue.operationCount > 0 ) {
+        _updateAgain = YES;
+        return;
     }
-    
+
     [self update];
 }
 
 - (void)update {
+    
     NSTimeInterval currentTime = [NSDate timeIntervalSinceReferenceDate];
 
     // capture self to avoid a retain cycle
@@ -518,7 +508,7 @@
             [mySelf traversePage:page withTimestamp:currentTime];
         }];
         
-        // update again if new pages were added during traverse
+        // update again if changes were made during traverse
         if ( mySelf->_updateAgain ) {
             mySelf->_updateAgain = NO;
             [mySelf update];

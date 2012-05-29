@@ -50,7 +50,6 @@
     switch( IMAGERY_DATASET ) {
         case 1:
             if ( [[UIScreen mainScreen] scale] > 1.5 ) {
-                NSLog(@"Retina");
                 // Dancing Robots Streets Retina: https://tiles.mapbox.com/v3/dancingrobots.map-lqzbpv0l.jsonp
                 database.baseUrlStrings = [NSArray arrayWithObjects:
                    @"http://a.tiles.mapbox.com/v3/dancingrobots.map-lqzbpv0l/{z}/{x}/{y}.png",
@@ -143,6 +142,7 @@
     }
     self.viewController.pager.terrainDatabase = database;
     
+#if 0
     // add world tour
     tourController = [RAWorldTour new];
     tourController.manipulator = self.viewController.manipulator;
@@ -150,7 +150,8 @@
     UITapGestureRecognizer * recognizer = [[UITapGestureRecognizer alloc] initWithTarget:tourController action:@selector(startOrStop:)];
 	[recognizer setNumberOfTapsRequired:4];
 	[self.viewController.view addGestureRecognizer:recognizer];
-    //[tourController start: self];
+    [tourController start: self];
+#endif
     
     self.window.rootViewController = self.viewController;
     [self.window makeKeyAndVisible];

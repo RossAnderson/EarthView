@@ -18,8 +18,6 @@ static const RAPolarCoordinate kDefaultVelocity = { 0, -10, 0 };
 static const CGFloat kAnimationDuration = 1.0f;
 static const CGFloat kMinimumAnimatedAngle = 2.0f;
 
-NSString * RAManipulatorStateChangedNotification = @"RAManipulatorStateChangedNotification";
-
 
 typedef struct {
     double  latitude;      // all angles in degrees
@@ -79,10 +77,6 @@ typedef enum {
 	[view addGestureRecognizer:stopRecognizer];
 }
 
-- (void)stateUpdated {
-    [[NSNotificationCenter defaultCenter] postNotificationName:RAManipulatorStateChangedNotification object:self];
-}
-
 - (double)latitude {
     return _state.latitude;
 }
@@ -91,7 +85,7 @@ typedef enum {
     NSAssert( !isnan(latitude), @"angle cannot be NAN" );
     
     _state.latitude = NormalizeLatitude(latitude);
-    [self stateUpdated];
+    [self updateCamera];
 }
 
 - (double)longitude {
@@ -102,7 +96,7 @@ typedef enum {
     NSAssert( !isnan(longitude), @"angle cannot be NAN" );
     
     _state.longitude = NormalizeLongitude(longitude);
-    [self stateUpdated];
+    [self updateCamera];
 }
 
 - (double)azimuth {
@@ -113,7 +107,7 @@ typedef enum {
     NSAssert( !isnan(azimuth), @"angle cannot be NAN" );
 
     _state.azimuth = NormalizeLongitude(azimuth);
-    [self stateUpdated];
+    [self updateCamera];
 }
 
 - (double)elevation {
@@ -126,7 +120,7 @@ typedef enum {
     if ( elevation > 90. ) elevation = 90.;
     
     _state.elevation = elevation;
-    [self stateUpdated];
+    [self updateCamera];
 }
 
 - (double)distance {
@@ -139,7 +133,36 @@ typedef enum {
     if ( distance > 1.e7 ) distance = 1.e7;
     
     _state.distance = distance;
-    [self stateUpdated];
+    [self updateCamera];
+}
+
+- (void)flyToRegion:(CLRegion *)region {
+    const double duration = 4.0;
+    
+    // determine the appropriate distance in order to see the entire region
+    double distance = region.radius / self.camera.tanThetaOverTwo;
+
+    // zoom in to that location
+    TPPropertyAnimation *anim = [TPPropertyAnimation propertyAnimationWithKeyPath:@"latitude"];
+    anim.duration = duration;
+    anim.fromValue = [NSNumber numberWithDouble:_state.latitude];
+    anim.toValue = [NSNumber numberWithDouble:region.center.latitude];
+    anim.timing = TPPropertyAnimationTimingEaseInEaseOut;
+    [anim beginWithTarget:self];
+    
+    anim = [TPPropertyAnimation propertyAnimationWithKeyPath:@"longitude"];
+    anim.duration = duration;
+    anim.fromValue = [NSNumber numberWithDouble:_state.longitude];
+    anim.toValue = [NSNumber numberWithDouble:region.center.longitude];
+    anim.timing = TPPropertyAnimationTimingEaseInEaseOut;
+    [anim beginWithTarget:self];
+    
+    anim = [TPPropertyAnimation propertyAnimationWithKeyPath:@"distance"];
+    anim.duration = duration;
+    anim.fromValue = [NSNumber numberWithDouble:_state.distance];
+    anim.toValue = [NSNumber numberWithDouble:distance];
+    anim.timing = TPPropertyAnimationTimingEaseInEaseOut;
+    [anim beginWithTarget:self];
 }
 
 - (GLKMatrix4)modelViewMatrixForState:(CameraState)aState {
@@ -154,8 +177,6 @@ typedef enum {
     perspective = GLKMatrix4Rotate(perspective, self.azimuth * (M_PI/180.), 0, 0, 1);
     
     GLKMatrix4 modelView = GLKMatrix4Multiply(perspective, surfaceTransform);
-    //NSLog(@"ModelView: %@", [self stringFromMatrix:renderVisitor.projectionMatrix], [self stringFromMatrix:modelView]);
-
     return modelView;
 }
 
@@ -184,8 +205,9 @@ typedef enum {
     return NO;
 }
 
-- (GLKMatrix4)modelViewMatrix {
-    return [self modelViewMatrixForState:_state];
+- (void)updateCamera {
+    // !!! how do we collalesce calls to this?
+    self.camera.modelViewMatrix = [self modelViewMatrixForState:_state];
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
@@ -209,7 +231,7 @@ typedef enum {
         case UIGestureRecognizerStateCancelled:
         case UIGestureRecognizerStateFailed:
             _state = startState;
-            [self stateUpdated];
+            [self updateCamera];
             break;
         case UIGestureRecognizerStateBegan:
             [self stop:nil];
@@ -262,7 +284,7 @@ typedef enum {
         case UIGestureRecognizerStateCancelled:
         case UIGestureRecognizerStateFailed:
             _state = startState;
-            [self stateUpdated];
+            [self updateCamera];
             break;
         case UIGestureRecognizerStateBegan:
         {
@@ -442,11 +464,12 @@ typedef enum {
     double lat, lon;
     
     // get the current touch position on the globe
-    [self intersectPoint:pt atLatitude:&lat atLongitude:&lon withState:_state];
+    if ( [self intersectPoint:pt atLatitude:&lat atLongitude:&lon withState:_state] == NO )
+        return;
     
     //printf("Zoom from %f %f to: %f %f\n", _state.latitude, _state.longitude, lat, lon);
     
-    double duration = 1.0;
+    const double duration = 1.0;
 
     // zoom in to that location
     TPPropertyAnimation *anim = [TPPropertyAnimation propertyAnimationWithKeyPath:@"latitude"];

@@ -13,13 +13,17 @@
 #import "RATilePager.h"
 #import "RAManipulator.h"
 
-@interface RASceneGraphController : UIViewController <GLKViewDelegate>
+@interface RASceneGraphController : UIViewController <GLKViewDelegate, UITextFieldDelegate>
 
-@property (readonly) EAGLContext * context;
+@property (strong) EAGLContext * context;
+@property (strong, nonatomic) IBOutlet GLKView * glView;
+@property (strong, nonatomic) IBOutlet UITextField * flyToLocationField;
 
-@property (readonly, nonatomic) RANode * sceneRoot;
-@property (readonly, nonatomic) RACamera * camera;
-@property (readonly, nonatomic) RATilePager * pager;
-@property (readonly, nonatomic) RAManipulator * manipulator;
+@property (strong, nonatomic) RANode * sceneRoot;
+@property (strong, nonatomic) RACamera * camera;
+@property (strong, nonatomic) RATilePager * pager;
+@property (strong, nonatomic) RAManipulator * manipulator;
+
+- (IBAction)flyToLocationFrom:(id)sender;
 
 @end

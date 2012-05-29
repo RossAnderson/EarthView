@@ -10,6 +10,7 @@
 
 #import <GLKit/GLKit.h>
 #import <QuartzCore/QuartzCore.h>
+#import <CoreLocation/CoreLocation.h>
 
 #import "RABoundingSphere.h"
 #import "RANodeVisitor.h"
@@ -54,6 +55,8 @@
 @implementation RASceneGraphController
 
 @synthesize context = _context;
+@synthesize glView;
+@synthesize flyToLocationField;
 @synthesize sceneRoot = _sceneRoot;
 @synthesize camera = _camera;
 @synthesize pager = _pager;
@@ -64,61 +67,84 @@
 {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
-        // setup scene
-        _camera = [RACamera new];
-        
-        _manipulator = [RAManipulator new];
-        _manipulator.camera = self.camera;
-        
-        _renderVisitor = [RARenderVisitor new];
-        _renderVisitor.camera = self.camera;
-        
-        RATileDatabase * database = [RATileDatabase new];
-        database.bounds = CGRectMake( -180,-90,360,180 );
-        database.googleTileConvention = YES;
-        
-        // OpenStreetMap default tiles
-        database.baseUrlStrings = [NSArray arrayWithObject: @"http://a.tile.openstreetmap.org/{z}/{x}/{y}.png"];
-        database.minzoom = 2;
-        database.maxzoom = 18;
-        
-        // setup the database pager
-        _pager = [RATilePager new];
-        _pager.imageryDatabase = database;
-        _pager.camera = self.camera;
+        [self setupSceneObjects];
     }
     return self;
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)awakeFromNib
+{
+    [self setupSceneObjects];
+}
+
+- (void)setupSceneObjects
+{
+    // setup scene
+    _camera = [RACamera new];
+    
+    _manipulator = [RAManipulator new];
+    _manipulator.camera = self.camera;
+    
+    RATileDatabase * database = [RATileDatabase new];
+    database.bounds = CGRectMake( -180,-90,360,180 );
+    database.googleTileConvention = YES;
+    
+    // OpenStreetMap default tiles
+    database.baseUrlStrings = [NSArray arrayWithObject: @"http://a.tile.openstreetmap.org/{z}/{x}/{y}.png"];
+    database.minzoom = 2;
+    database.maxzoom = 18;
+    
+    // setup the database pager
+    _pager = [RATilePager new];
+    _pager.imageryDatabase = database;
+    _pager.camera = self.camera;
+    
+    // setup scene
+    [_pager setupPages];
+    _sceneRoot = [self createSceneGraphForPager:_pager];
 }
 
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    [_manipulator addGesturesToView: self.view];
-        
-    _context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+    [_manipulator addGesturesToView: glView];
     
-    if (!_context) {
+    // setup fly to location field
+    UIImage * flyImage = [UIImage imageNamed:@"fly"];
+    UIImageView * flyView = [[UIImageView alloc] initWithImage:flyImage];
+    [flyToLocationField setLeftView:flyView];
+    flyToLocationField.leftViewMode = UITextFieldViewModeAlways;
+    
+    UITapGestureRecognizer * tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self.flyToLocationField action:@selector(resignFirstResponder)];
+    [glView addGestureRecognizer: tapGesture];
+    flyToLocationField.userInteractionEnabled = YES;
+    glView.userInteractionEnabled = YES;
+    
+    [self setContext:[[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2]];
+    if ( ! self.context ) {
         NSLog(@"Failed to create ES context");
     }
     
-    GLKView *view = (GLKView *)self.view;
-    view.context = _context;
-    view.delegate = self;
-    view.enableSetNeedsDisplay = NO;
-    view.drawableDepthFormat = GLKViewDrawableDepthFormat24;
-    //view.drawableMultisample = GLKViewDrawableMultisample4X;
-        
+    // these should be set in the xib/storyboard
+    //glView.delegate = self;
+    //glView.drawableDepthFormat = GLKViewDrawableDepthFormat24;
+    //glView.drawableMultisample = GLKViewDrawableMultisample4X;
+    
     // setup display link to update the view
     _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(displayLinkUpdate:)];
     [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
     
     // setup auxillary context for threaded texture loading operations
-    if ( ! _pager.auxilliaryContext ) _pager.auxilliaryContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:[_context sharegroup]];
-    [_pager setup];
+    if ( _pager && ! _pager.auxilliaryContext ) _pager.auxilliaryContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:[_context sharegroup]];
+    [_pager setupGL];
     
     // register for notifications
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(displayNotification:) name:RAManipulatorStateChangedNotification object:_manipulator];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(displayNotification:) name:RATilePagerContentChangedNotification object:_pager];
+    if ( _camera ) [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(displayNotification:) name:RACameraStateChangedNotification object:_camera];
+    if ( _pager ) [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(displayNotification:) name:RATilePagerContentChangedNotification object:_pager];
     
     [self setupGL];
     [self update];
@@ -148,8 +174,9 @@
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
-    if ( self.view.window.screen && self.view.window.screen != [UIScreen mainScreen] )
-        return NO;
+    // do not rotate if on an external display
+    if ( [self isViewLoaded] && self.view.window.screen && self.view.window.screen != [UIScreen mainScreen] )
+        return (interfaceOrientation == UIInterfaceOrientationPortrait);
     
     if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
         return (interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown);
@@ -169,20 +196,60 @@
     }
     
     if ( _needsDisplay ) {
-        GLKView *view = (GLKView *)self.view;
-        
         [self update];
-        [view display];
+        [glView display];
         
         _needsDisplay = NO;
     }
 }
 
 - (void)displayNotification:(NSNotification *)note {
-    if ( [[note name] isEqualToString:RAManipulatorStateChangedNotification] )
+    if ( [[note name] isEqualToString:RACameraStateChangedNotification] )
         _needsUpdate = YES;
     
     _needsDisplay = YES;
+}
+
+- (EAGLContext *)context {
+    return _context;
+}
+
+- (void)setContext:(EAGLContext *)context {
+    _context = context;
+    glView.context = context;
+}
+
+- (IBAction)flyToLocationFrom:(id)sender {
+    CLGeocoder * geocoder = [CLGeocoder new];
+    UITextField * textField = (UITextField *)sender;
+    
+    textField.enabled = NO;
+    NSString * address = [textField text];
+    
+    [geocoder geocodeAddressString:address completionHandler:^(NSArray *placemarks, NSError *error) {
+        if ( placemarks ) {
+            CLPlacemark * place = [placemarks objectAtIndex:0];
+            [_manipulator flyToRegion: place.region];
+        } else {
+            textField.text = nil;
+        }
+        
+        textField.enabled = YES;
+        [geocoder cancelGeocode];   // this doesn't do anything, but it ensures that the geocoder is retained for this block
+    }];
+}
+
+#pragma mark - UITextFieldDelegate
+
+- (BOOL)textFieldShouldClear:(UITextField *)textField {
+    NSLog(@"Clear!");
+    return YES;
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField {
+    [textField resignFirstResponder];
+    [self flyToLocationFrom:textField];
+    return YES;
 }
 
 #pragma mark - Scene Graph
@@ -205,30 +272,34 @@
     [EAGLContext setCurrentContext:_context];
         
     glEnable(GL_DEPTH_TEST);
-    
     glEnable(GL_BLEND);
     glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
     
     // setup skybox
-    NSString * starPath = [[NSBundle mainBundle] pathForResource:@"star1" ofType:@"png"];
-    NSArray * starPaths = [NSArray arrayWithObjects: starPath, starPath, starPath, starPath, starPath, starPath, nil];
-    NSError * error = nil;
-    NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:
-     [NSNumber numberWithBool:YES], GLKTextureLoaderOriginBottomLeft,
-     [NSNumber numberWithBool:YES], GLKTextureLoaderGenerateMipmaps,
-     nil];
-    GLKTextureInfo * starTexture = [GLKTextureLoader cubeMapWithContentsOfFiles:starPaths options:options error:&error];
+    if ( ! _skybox ) {
+        NSString * starPath = [[NSBundle mainBundle] pathForResource:@"star1" ofType:@"png"];
+        NSArray * starPaths = [NSArray arrayWithObjects: starPath, starPath, starPath, starPath, starPath, starPath, nil];
+        NSError * error = nil;
+        NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:
+         [NSNumber numberWithBool:YES], GLKTextureLoaderOriginBottomLeft,
+         [NSNumber numberWithBool:YES], GLKTextureLoaderGenerateMipmaps,
+         nil];
+        GLKTextureInfo * starTexture = [GLKTextureLoader cubeMapWithContentsOfFiles:starPaths options:options error:&error];
 
-    _skybox = [[GLKSkyboxEffect alloc] init];
-    _skybox.label = @"Stars";
-    _skybox.xSize = _skybox.ySize = _skybox.zSize = 40;
-    _skybox.textureCubeMap.name = starTexture.name;
+        _skybox = [[GLKSkyboxEffect alloc] init];
+        _skybox.label = @"Stars";
+        _skybox.xSize = _skybox.ySize = _skybox.zSize = 40;
+        _skybox.textureCubeMap.name = starTexture.name;
+    }
     
-    // set as scene
-    _sceneRoot = [self createSceneGraphForPager:_pager];
+    // setup render visitor
+    if ( ! _renderVisitor ) {
+        _renderVisitor = [RARenderVisitor new];
+        _renderVisitor.camera = self.camera;
+        [_renderVisitor setupGL];
+    }
     
     [self update];
-    [_renderVisitor setupGL];
     
     _needsUpdate = YES;
     _needsDisplay = YES;
@@ -246,15 +317,15 @@
 
 - (void)update
 {
-    self.camera.modelViewMatrix = [_manipulator modelViewMatrix];
+    if ( _manipulator ) {
+        // position light directly above the globe
+        RAPolarCoordinate lightPolar = {
+            _manipulator.latitude, _manipulator.longitude, 1e7
+        };
+        GLKVector3 lightEcef = ConvertPolarToEcef( lightPolar );
+        _renderVisitor.lightPosition = lightEcef;
+    }
     
-    // position light directly above the globe
-    RAPolarCoordinate lightPolar = {
-        _manipulator.latitude, _manipulator.longitude, 1e7
-    };
-    GLKVector3 lightEcef = ConvertPolarToEcef( lightPolar );
-    _renderVisitor.lightPosition = lightEcef;
-        
     self.camera.viewport = self.view.bounds;
     [_camera calculateProjectionForBounds: self.sceneRoot.bound];
     

@@ -63,29 +63,33 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
     [_graphicsQueue waitUntilAllOperationsAreFinished];
 }
 
-- (void)setup {
-    // build root pages
-    NSMutableSet * pages = [NSMutableSet set];
-    
-    int basezoom = self.imageryDatabase.minzoom;
-    if ( basezoom < 2 ) basezoom = 2;
-    int tilecount = 1 << basezoom;  // fast way to calc 2 ^ basezoom
-    
-    TileID t;
-    t.z = basezoom;
-    for( t.y = 0; t.y < tilecount; t.y++ ) {
-        for( t.x = 0; t.x < tilecount; t.x++ ) {
-            RAPage * page = [self makeLeafPageForTile:t withParent:nil];
-            [pages addObject:page];
+- (void)setupPages {
+    if ( ! rootPages ) {
+        // build root pages
+        NSMutableSet * pages = [NSMutableSet set];
+        
+        int basezoom = self.imageryDatabase.minzoom;
+        if ( basezoom < 2 ) basezoom = 2;
+        int tilecount = 1 << basezoom;  // fast way to calc 2 ^ basezoom
+        
+        TileID t;
+        t.z = basezoom;
+        for( t.y = 0; t.y < tilecount; t.y++ ) {
+            for( t.x = 0; t.x < tilecount; t.x++ ) {
+                RAPage * page = [self makeLeafPageForTile:t withParent:nil];
+                [pages addObject:page];
+            }
         }
+        
+        rootPages = [NSSet setWithSet:pages];
     }
-    
-    rootPages = [NSSet setWithSet:pages];
-    
+}
+
+- (void)setupGL {
     // load the default "grid" texture
     if ( _defaultTexture == nil ) {
         [EAGLContext setCurrentContext: self.auxilliaryContext];
-
+        
         UIImage * gridImage = [UIImage imageNamed:@"grid256"];
         _defaultTexture = [[RATextureWrapper alloc] initWithImage:gridImage];
         

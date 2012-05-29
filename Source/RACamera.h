@@ -11,6 +11,8 @@
 
 #import "RABoundingSphere.h"
 
+extern NSString * RACameraStateChangedNotification;
+
 
 @interface RACamera : NSObject
 
@@ -22,5 +24,7 @@
 @property (readonly) float tanThetaOverTwo;
 
 - (void)calculateProjectionForBounds:(RABoundingSphere *)bound;
+
+- (void)followCamera:(RACamera *)primary;
 
 @end

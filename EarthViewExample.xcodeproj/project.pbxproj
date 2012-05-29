@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		9109E03C153D86100008286D /* star1.png in Resources */ = {isa = PBXBuildFile; fileRef = 9109E03B153D86100008286D /* star1.png */; };
 		9109E03E153D864F0008286D /* RASceneGraphController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9109E03D153D864F0008286D /* RASceneGraphController.m */; };
+		91483B351573FA8000FC195E /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91483B341573FA8000FC195E /* CoreLocation.framework */; };
+		91483B39157463D200FC195E /* fly.png in Resources */ = {isa = PBXBuildFile; fileRef = 91483B37157463D200FC195E /* fly.png */; };
+		91483B3A157463D200FC195E /* fly@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 91483B38157463D200FC195E /* fly@2x.png */; };
 		916EEB8D1552D4E800951ACC /* RAPageNode.m in Sources */ = {isa = PBXBuildFile; fileRef = 916EEB8C1552D4E800951ACC /* RAPageNode.m */; };
 		91B9BF1E15549FB100A7602E /* RAImageSampler.m in Sources */ = {isa = PBXBuildFile; fileRef = 91B9BF1D15549FB100A7602E /* RAImageSampler.m */; };
 		91C1D9BA15575D0C008717A9 /* RAWorldTour.m in Sources */ = {isa = PBXBuildFile; fileRef = 91C1D9B915575D0C008717A9 /* RAWorldTour.m */; };
@@ -55,6 +58,9 @@
 /* Begin PBXFileReference section */
 		9109E03B153D86100008286D /* star1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = star1.png; sourceTree = "<group>"; };
 		9109E03D153D864F0008286D /* RASceneGraphController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RASceneGraphController.m; sourceTree = "<group>"; };
+		91483B341573FA8000FC195E /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
+		91483B37157463D200FC195E /* fly.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = fly.png; sourceTree = "<group>"; };
+		91483B38157463D200FC195E /* fly@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "fly@2x.png"; sourceTree = "<group>"; };
 		916EEB8B1552D4E800951ACC /* RAPageNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RAPageNode.h; sourceTree = "<group>"; };
 		916EEB8C1552D4E800951ACC /* RAPageNode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RAPageNode.m; sourceTree = "<group>"; };
 		91B9BF1C15549FB000A7602E /* RAImageSampler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RAImageSampler.h; sourceTree = "<group>"; };
@@ -129,6 +135,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				91483B351573FA8000FC195E /* CoreLocation.framework in Frameworks */,
 				91C1D9DE155B2CBC008717A9 /* CFNetwork.framework in Frameworks */,
 				91C1D9DF155B2CBC008717A9 /* Security.framework in Frameworks */,
 				91C1D9E0155B2CBC008717A9 /* SystemConfiguration.framework in Frameworks */,
@@ -182,6 +189,7 @@
 				91C1D9DB155B2CBC008717A9 /* CFNetwork.framework */,
 				91C1D9DC155B2CBC008717A9 /* Security.framework */,
 				91C1D9DD155B2CBC008717A9 /* SystemConfiguration.framework */,
+				91483B341573FA8000FC195E /* CoreLocation.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -264,6 +272,8 @@
 		91F77E841539342A00F8AE05 /* Images */ = {
 			isa = PBXGroup;
 			children = (
+				91483B37157463D200FC195E /* fly.png */,
+				91483B38157463D200FC195E /* fly@2x.png */,
 				91F77E851539342A00F8AE05 /* clear256.png */,
 				91F77E871539342A00F8AE05 /* grid256.png */,
 				9109E03B153D86100008286D /* star1.png */,
@@ -339,6 +349,8 @@
 				91C9979E1549DBD400B69A8A /* Shader.vsh in Resources */,
 				91C997601548E21400B69A8A /* Icon144.png in Resources */,
 				91C997621548E22E00B69A8A /* Icon72.png in Resources */,
+				91483B39157463D200FC195E /* fly.png in Resources */,
+				91483B3A157463D200FC195E /* fly@2x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

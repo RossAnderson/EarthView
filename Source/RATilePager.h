@@ -28,7 +28,8 @@ extern NSString * RATilePagerContentChangedNotification;
 @property (readonly) NSSet * rootPages;
 @property (strong) RACamera * camera;
 
-- (void)setup;  // call once the databases are configured
+- (void)setupPages;  // call once the databases are configured
+- (void)setupGL;
 - (void)requestUpdate;
 
 @end

@@ -9,11 +9,10 @@
 #import <Foundation/Foundation.h>
 
 #import <GLKit/GLKit.h>
+#import <CoreLocation/CoreLocation.h>
 
 #import "RACamera.h"
 #import "RAGeographicUtils.h"
-
-extern NSString * RAManipulatorStateChangedNotification;
 
 
 @interface RAManipulator : NSObject <UIGestureRecognizerDelegate>
@@ -29,6 +28,8 @@ extern NSString * RAManipulatorStateChangedNotification;
 
 - (void)addGesturesToView:(UIView *)view;
 
-- (GLKMatrix4)modelViewMatrix;
+//- (GLKMatrix4)modelViewMatrix;
+
+- (void)flyToRegion:(CLRegion *)region;
 
 @end

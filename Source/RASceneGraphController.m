@@ -57,6 +57,7 @@
 @synthesize context = _context;
 @synthesize glView;
 @synthesize flyToLocationField;
+@synthesize statsLabel, clippingEnable, pagingEnable;
 @synthesize sceneRoot = _sceneRoot;
 @synthesize camera = _camera;
 @synthesize pager = _pager;
@@ -111,6 +112,7 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    [statsLabel setText:nil];
     [_manipulator addGesturesToView: glView];
     
     // setup fly to location field
@@ -136,6 +138,7 @@
     
     // setup display link to update the view
     _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(displayLinkUpdate:)];
+    _displayLink.frameInterval = 2;
     [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
     
     // setup auxillary context for threaded texture loading operations
@@ -190,7 +193,7 @@
 }
 
 - (void)displayLinkUpdate:(CADisplayLink *)sender {
-    if ( _needsUpdate ) {
+    if ( _needsUpdate && ( pagingEnable == nil || pagingEnable.on ) ) {
         [_pager requestUpdate];
         _needsUpdate = NO;
     }
@@ -350,8 +353,10 @@
     glClear(GL_DEPTH_BUFFER_BIT);
 
     // run the render visitor
-    [_renderVisitor clear];
-    [self.sceneRoot accept: _renderVisitor];
+    if ( clippingEnable == nil || clippingEnable.on ) {
+        [_renderVisitor clear];
+        [self.sceneRoot accept: _renderVisitor];
+    }
     [_renderVisitor render];
     
     // check for errors
@@ -369,6 +374,10 @@
     
     [RATextureWrapper cleanupAll:NO];
     [RAGeometry cleanupAll:NO];
+    
+    // show stats
+    if ( statsLabel )
+        [statsLabel setText:_renderVisitor.statsString];
 }
 
 @end

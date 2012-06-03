@@ -63,12 +63,6 @@ static NSUInteger sTotalPageCount = 0;
     GLKVector3 center = GLKMatrix4MultiplyAndProjectVector3( camera.modelViewMatrix, self.bound.center );
     double distance = GLKVector3Length(center);
     
-    /*
-    const GLKMatrix4 m = camera.modelViewMatrix;
-    GLKVector3 cameraPos = GLKVector3Make( m.m[12], m.m[13], m.m[14] );
-    float distance = GLKVector3Distance(cameraPos, self.bound.center);
-     */
-    
     // convert object error to screen error
     CGSize size = camera.viewport.size;
     float epsilon = ( 2. * self.bound.radius ) / 256.;    // object error
@@ -78,11 +72,20 @@ static NSUInteger sTotalPageCount = 0;
 }
 
 - (BOOL)isOnscreenWithCamera:(RACamera *)camera {
-    GLKMatrix4 modelViewProjectionMatrix = GLKMatrix4Multiply( camera.projectionMatrix, camera.modelViewMatrix );
+    // convert the bounding sphere center into camera space
+    GLKVector3 s = GLKMatrix4MultiplyAndProjectVector3( camera.modelViewMatrix, self.bound.center );
     
-    RABoundingSphere * sb = [self.bound transform:modelViewProjectionMatrix];
-    if ( sb.center.x + sb.radius < -1 || sb.center.x - sb.radius > 1 ) return NO;
-    if ( sb.center.y + sb.radius < -1 || sb.center.y - sb.radius > 1 ) return NO;
+    float radius = self.bound.radius * 1.5f;
+
+    // test against near/far planes
+    if ( s.z - radius > -camera.near ) return NO;
+    if ( s.z + radius < -camera.far ) return NO;
+
+    // left, right, top, bottom planes
+    if ( GLKVector3DotProduct( camera.leftPlaneNormal, s ) > radius ) return NO;
+    if ( GLKVector3DotProduct( camera.rightPlaneNormal, s ) > radius ) return NO;
+    if ( GLKVector3DotProduct( camera.topPlaneNormal, s ) > radius ) return NO;
+    if ( GLKVector3DotProduct( camera.bottomPlaneNormal, s ) > radius ) return NO;
     
     return YES;
 }

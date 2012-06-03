@@ -18,6 +18,9 @@
 @property (strong) EAGLContext * context;
 @property (strong, nonatomic) IBOutlet GLKView * glView;
 @property (strong, nonatomic) IBOutlet UITextField * flyToLocationField;
+@property (strong, nonatomic) IBOutlet UILabel * statsLabel;
+@property (strong, nonatomic) IBOutlet UISwitch * clippingEnable;
+@property (strong, nonatomic) IBOutlet UISwitch * pagingEnable;
 
 @property (strong, nonatomic) RANode * sceneRoot;
 @property (strong, nonatomic) RACamera * camera;

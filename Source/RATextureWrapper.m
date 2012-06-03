@@ -136,8 +136,8 @@
         free( pixels );
 
         // simple way to check that we don't have too many textures active
-        if ( texture > 500 )
-            NSLog(@"Warning: texture id = %d", texture);
+        if ( texture > 600 )
+            NSLog(@"Warning: high texture id = %d", texture);
     }
     return self;
 }

@@ -43,3 +43,5 @@ Bugs, Limitations, and Todos
 - There are holes in the globe at the poles because there is no map tile content there.
 - The tilt control should bounce when you hit the hard stops.
 - The star box should fade into a blue sky box as the user zooms the camera in.
+
+![](https://github.com/RossAnderson/EarthView/raw/master/screenshot-ipad.png)

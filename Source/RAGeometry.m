@@ -162,8 +162,8 @@ static int64_t sGeometryObjectCount = 0;
         _vertexDataDirty = _indexDataDirty = YES;
         
         OSAtomicIncrement64( &sGeometryObjectCount );
-        if ( sGeometryObjectCount > 500 ) {
-            NSLog(@"Warning: there are now %lld geometry objects!", sGeometryObjectCount);
+        if ( sGeometryObjectCount > 600 ) {
+            NSLog(@"Warning: high geometry count = %lld", sGeometryObjectCount);
         }
     }
     return self;

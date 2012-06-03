@@ -21,6 +21,7 @@ enum
     UNIFORM_MODELVIEWPROJECTION_MATRIX,
 //    UNIFORM_NORMAL_MATRIX,
     UNIFORM_TEXTURE0,
+    UNIFORM_TEXTURE1,
     UNIFORM_LIGHT_DIRECTION,
     UNIFORM_LIGHT_AMBIENT_COLOR,
     UNIFORM_LIGHT_DIFFUSE_COLOR,
@@ -55,6 +56,7 @@ enum
 @implementation RARenderVisitor {
     NSMutableArray *    renderQueue;
     RAShaderProgram *   shader;
+    
 }
 
 @synthesize camera;
@@ -86,6 +88,11 @@ enum
     [renderQueue sortUsingComparator:(NSComparator)^(RenderData* obj1, RenderData* obj2) {
         return obj1.distanceFromCamera > obj2.distanceFromCamera;
     }];
+}
+
+- (NSString *)statsString
+{
+    return [NSString stringWithFormat:@"%d geometries", [renderQueue count]];
 }
 
 - (void)setupGL
@@ -127,11 +134,10 @@ enum
     [shader setUniform:UNIFORM_TEXTURE0 toInt:0];
 
     [renderQueue enumerateObjectsUsingBlock:^(RenderData * child, NSUInteger idx, BOOL *stop) {
-        //GLKMatrix3 normalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(child.modelviewMatrix), NULL);
-        GLKMatrix4 modelViewProjectionMatrix = GLKMatrix4Multiply(self.camera.projectionMatrix, child.modelviewMatrix);
+        GLKMatrix4 modelViewMatrix = GLKMatrix4Multiply( self.camera.modelViewMatrix, child.modelviewMatrix );
+        GLKMatrix4 modelViewProjectionMatrix = GLKMatrix4Multiply(self.camera.projectionMatrix, modelViewMatrix);
         
         [shader setUniform:UNIFORM_MODELVIEWPROJECTION_MATRIX toMatrix4:modelViewProjectionMatrix];
-        //[shader setUniform:UNIFORM_NORMAL_MATRIX toMatrix4:normalMatrix];
         
         [child.geometry renderGL];
     }];
@@ -165,7 +171,7 @@ enum
     // insert into render queue
     RenderData * data = [RenderData new];
     data.geometry = node;
-    data.modelviewMatrix = modelViewMatrix;
+    data.modelviewMatrix = [self currentTransform];
     data.distanceFromCamera = -pc.z;
     [renderQueue addObject: data];
 }
@@ -178,29 +184,26 @@ enum
     [self traversePage:node.page withModelViewProjectionMatrix:modelViewProjectionMatrix];
 }
 
-- (BOOL)traversePage:(RAPage *)page withModelViewProjectionMatrix:(GLKMatrix4)matrix {
-    if ( page == nil ) return NO;
+- (void)traversePage:(RAPage *)page withModelViewProjectionMatrix:(GLKMatrix4)matrix {
+    if ( page == nil ) return;
     
     // don't bother traversing if we are offscreen
-    if ( ! [page isOnscreenWithCamera:self.camera] ) {
-        return YES;
-    }
+    if ( ! [page isOnscreenWithCamera:self.camera] ) return;
 
-    // is the page facing away from the camera?
-    if ( page.tile.z > 2 && [page calculateTiltWithCamera:self.camera] < 0.0f ) return YES;
+    // is the page facing away from the camera? give the really big pages more leeway
+    float cosTheta = [page calculateTiltWithCamera:self.camera];
+    if ( cosTheta < -0.5f || ( page.tile.z > 2 && cosTheta < 0.0f ) ) return;
     
     float texelError = [page calculateScreenSpaceErrorWithCamera:self.camera];
     
     // should we choose to display this page?
     if ( texelError < 5.0f && page.isReady ) {
         [self applyGeometry: page.geometry];
-        return YES;
+        return;
     }
     
-    BOOL success = YES;
-    
     // !!! this doesn't work well because it can't skip to grandchildren: each level must be loaded consecutively
-    success = ( page.child1.isReady && page.child2.isReady && page.child3.isReady && page.child4.isReady );
+    BOOL success = ( page.child1.isReady && page.child2.isReady && page.child3.isReady && page.child4.isReady );
     
     // traverse children
     if ( success ) {
@@ -209,14 +212,9 @@ enum
         [self traversePage:page.child3 withModelViewProjectionMatrix:matrix];
         [self traversePage:page.child4 withModelViewProjectionMatrix:matrix];
     } else if ( page.isReady ) {
-        // don't bother traversing if we are offscreen
-        if ( ! [page isOnscreenWithCamera:self.camera] ) return YES;
-        
         [self applyGeometry: page.geometry];
-        return YES;
+        return;
     }
-    
-    return success;
 }
 
 

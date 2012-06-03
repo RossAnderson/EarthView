@@ -16,7 +16,7 @@ static const RAPolarCoordinate kPolarZero = { 0, 0, 0 };
 static const RAPolarCoordinate kDefaultVelocity = { 0, -10, 0 };
 
 static const CGFloat kAnimationDuration = 1.0f;
-static const CGFloat kMinimumAnimatedAngle = 2.0f;
+static const CGFloat kMinimumAnimatedVelocity = 15.0f;
 
 
 typedef struct {
@@ -357,12 +357,17 @@ typedef enum {
         {
             CGPoint vel = [pan velocityInView:view];
             
+            // don't animate small motions
+            if ( fabs( MAX(vel.x, vel.y) ) < kMinimumAnimatedVelocity ) {
+                sAction = GestureNone;
+                break;
+            }
+            
             switch (sAction) {
                 case GestureRotate:
                 {
                     // calculate how much movement
-                    CGFloat angle = vel.x * 0.03;
-                    if ( fabs(angle) < kMinimumAnimatedAngle ) break;
+                    double angle = vel.x * 0.03;
 
                     TPPropertyAnimation *anim = [TPPropertyAnimation propertyAnimationWithKeyPath:@"azimuth"];
                     anim.duration = kAnimationDuration;
@@ -370,13 +375,13 @@ typedef enum {
                     anim.toValue = [NSNumber numberWithDouble:_state.azimuth + angle];
                     anim.timing = TPPropertyAnimationTimingEaseOut;
                     [anim beginWithTarget:self];
+                    
                     break;
                 }
                 case GestureTilt:
                 {
                     // calculate how much movement
-                    CGFloat angle = vel.y * 0.03;
-                    if ( fabs(angle) < kMinimumAnimatedAngle ) break;
+                    double angle = vel.y * 0.03;
                     
                     TPPropertyAnimation *anim = [TPPropertyAnimation propertyAnimationWithKeyPath:@"elevation"];
                     anim.duration = kAnimationDuration;
@@ -384,38 +389,39 @@ typedef enum {
                     anim.toValue = [NSNumber numberWithDouble:_state.elevation + angle];
                     anim.timing = TPPropertyAnimationTimingEaseOut;
                     [anim beginWithTarget:self];
+                    
                     break;
                 }
                 case GestureGeoDrag:
                 {
                     // continue movement in the same direction
-                    CGPoint dir = CGPointMake( _state.longitude - startState.longitude, _state.latitude - startState.latitude );
-                    dir.x = NormalizeLongitude(dir.x);
+                    double dir_lon = NormalizeLongitude( _state.longitude - startState.longitude );
+                    double dir_lat = _state.latitude - startState.latitude;
 
-                    CGFloat length = sqrt( dir.x*dir.x + dir.y*dir.y );
-                    if ( length < 1 ) break;
-                    dir.x /= length;
-                    dir.y /= length;
+                    double length = sqrt( dir_lon*dir_lon + dir_lat*dir_lat );
+                    if ( length == 0.0f ) break;
+                    dir_lon /= length;
+                    dir_lat /= length;
                     
                     // calculate how much movement
-                    CGFloat speed = sqrt( vel.x*vel.x + vel.y*vel.y );
-                    CGFloat angle = ( _state.distance / 1e7 ) * speed * 0.03;
-                    if ( fabs(angle) < kMinimumAnimatedAngle ) break;
+                    double speed = sqrt( vel.x*vel.x + vel.y*vel.y );
+                    double angle = ( _state.distance / 1e7 ) * speed * 0.03;
                     
-                    CGPoint destination = CGPointMake( _state.longitude + dir.x*angle, _state.latitude + dir.y*angle );
+                    double dest_lon = _state.longitude + dir_lon*angle;
+                    double dest_lat = _state.latitude + dir_lat*angle;
                     
                     // zoom to that location
                     TPPropertyAnimation *anim = [TPPropertyAnimation propertyAnimationWithKeyPath:@"latitude"];
                     anim.duration = kAnimationDuration;
                     anim.fromValue = [NSNumber numberWithDouble:_state.latitude];
-                    anim.toValue = [NSNumber numberWithDouble:destination.y];
+                    anim.toValue = [NSNumber numberWithDouble:dest_lat];
                     anim.timing = TPPropertyAnimationTimingEaseOut;
                     [anim beginWithTarget:self];
                     
                     anim = [TPPropertyAnimation propertyAnimationWithKeyPath:@"longitude"];
                     anim.duration = kAnimationDuration;
                     anim.fromValue = [NSNumber numberWithDouble:_state.longitude];
-                    anim.toValue = [NSNumber numberWithDouble:destination.x];
+                    anim.toValue = [NSNumber numberWithDouble:dest_lon];
                     anim.timing = TPPropertyAnimationTimingEaseOut;
                     [anim beginWithTarget:self];
                     
@@ -424,11 +430,10 @@ typedef enum {
                 case GestureAxisSpin:
                 {
                     // calculate how much movement
-                    CGFloat speed = vel.x;
-                    CGFloat angle = -( _state.distance / 1e7 ) * speed * 0.1;
-                    if ( fabs(angle) < kMinimumAnimatedAngle ) break;
+                    double speed = vel.x;
+                    double angle = -( _state.distance / 1e7 ) * speed * 0.1;
                     
-                    float destination = _state.longitude + angle;
+                    double destination = _state.longitude + angle;
                     
                     // spin the globe
                     TPPropertyAnimation *anim = [TPPropertyAnimation propertyAnimationWithKeyPath:@"longitude"];

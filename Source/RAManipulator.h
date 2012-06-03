@@ -28,8 +28,6 @@
 
 - (void)addGesturesToView:(UIView *)view;
 
-//- (GLKMatrix4)modelViewMatrix;
-
 - (void)flyToRegion:(CLRegion *)region;
 
 @end

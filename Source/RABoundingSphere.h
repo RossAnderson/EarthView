@@ -28,5 +28,6 @@
 - (BOOL)intersectsBoundingSphere:(RABoundingSphere *)bound;
 
 - (RABoundingSphere *)transform:(GLKMatrix4)m;
+- (RABoundingSphere *)transformPlanar:(GLKMatrix4)m;
 
 @end

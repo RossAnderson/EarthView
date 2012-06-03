@@ -14,6 +14,8 @@
 
 @interface RARenderVisitor : RANodeVisitor
 
+@property (readonly) NSString * statsString;
+
 @property (strong) RACamera * camera;
 @property (assign) GLKVector3 lightPosition;
 @property (assign) GLKVector4 lightAmbientColor;

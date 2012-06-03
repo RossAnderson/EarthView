@@ -8,6 +8,7 @@
 
 #import "RABoundingSphere.h"
 
+#import <GLKit/GLKVector2.h>
 #import <GLKit/GLKVector3.h>
 #import <GLKit/GLKMatrix4.h>
 #import <GLKit/GLKMathUtils.h>
@@ -125,7 +126,7 @@
     return ( GLKVector3DotProduct(diff, diff) <= (radius + bound.radius)*(radius + bound.radius));
 }
 
-- (RABoundingSphere *)transform:(GLKMatrix4)tr
+- (RABoundingSphere *)transform:(GLKMatrix4)m
 {
     RABoundingSphere * newbounds = [RABoundingSphere new];
     
@@ -133,17 +134,17 @@
     
     GLKVector3 x_prime = self.center;
     x_prime.x += self.radius;
-    x_prime = GLKMatrix4MultiplyAndProjectVector3( tr, x_prime );
+    x_prime = GLKMatrix4MultiplyAndProjectVector3( m, x_prime );
     
     GLKVector3 y_prime = self.center;
     y_prime.y += self.radius;
-    y_prime = GLKMatrix4MultiplyAndProjectVector3( tr, y_prime );
+    y_prime = GLKMatrix4MultiplyAndProjectVector3( m, y_prime );
     
     GLKVector3 z_prime = self.center;
     z_prime.z += self.radius;
-    z_prime = GLKMatrix4MultiplyAndProjectVector3( tr, z_prime );
+    z_prime = GLKMatrix4MultiplyAndProjectVector3( m, z_prime );
     
-    newbounds.center = GLKMatrix4MultiplyAndProjectVector3( tr, self.center );
+    newbounds.center = GLKMatrix4MultiplyAndProjectVector3( m, self.center );
     
     // calculate the radius from center
     float x_prime_radius = GLKVector3Length( GLKVector3Subtract( x_prime, newbounds.center ) );
@@ -156,7 +157,41 @@
     if (newbounds.radius < z_prime_radius) newbounds.radius = z_prime_radius;
 
     return newbounds;
+}
+
+- (RABoundingSphere *)transformPlanar:(GLKMatrix4)m
+{
+    // this method is similar to the above but the resulting sphere is projected
+    // only in X and Y. this is useful when projecting into normalize screen space
+    // where the Z axis is logarithmic, for example
     
+    RABoundingSphere * newbounds = [RABoundingSphere new];
+    
+    GLKVector3 x_prime = self.center;
+    x_prime.x += self.radius;
+    x_prime = GLKMatrix4MultiplyAndProjectVector3( m, x_prime );
+    
+    GLKVector3 y_prime = self.center;
+    y_prime.y += self.radius;
+    y_prime = GLKMatrix4MultiplyAndProjectVector3( m, y_prime );
+    
+    GLKVector3 z_prime = self.center;
+    z_prime.z += self.radius;
+    z_prime = GLKMatrix4MultiplyAndProjectVector3( m, z_prime );
+    
+    newbounds.center = GLKMatrix4MultiplyAndProjectVector3( m, self.center );
+    
+    // calculate the radius from center
+    float x_prime_radius = GLKVector2Length( GLKVector2Make( x_prime.x - newbounds.center.x, x_prime.y - newbounds.center.y ) );
+    float y_prime_radius = GLKVector2Length( GLKVector2Make( y_prime.x - newbounds.center.x, y_prime.y - newbounds.center.y ) );
+    float z_prime_radius = GLKVector2Length( GLKVector2Make( z_prime.x - newbounds.center.x, z_prime.y - newbounds.center.y ) );
+    
+    // choose the longest radius
+    newbounds.radius = x_prime_radius;
+    if (newbounds.radius < y_prime_radius) newbounds.radius = y_prime_radius;
+    if (newbounds.radius < z_prime_radius) newbounds.radius = z_prime_radius;
+    
+    return newbounds;
 }
 
 

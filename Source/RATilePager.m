@@ -269,6 +269,8 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
         
         page.geometry = [self createGeometryForTile:page.tile];
         page.geometryState = Loading;
+        
+        page.geometry.texture1 = _defaultTexture;
     }
     
     // update if needed
@@ -465,28 +467,39 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
     [self updatePageIfNeeded: page];
     [self requestPage: page];
     
-    float texelError = [page calculateScreenSpaceErrorWithCamera:self.camera];
-    
-    if ( page.tile.z >= self.imageryDatabase.maxzoom )
-        texelError = 0.0f; // force display at maximum zoom level
-    
-    // should we traverse to load more detail?
-    if ( texelError > 5.0f ) {
-        // traverse children
-        [self preparePageForTraversal:page];
-        
-        [self traversePage:page.child1 withTimestamp:timestamp];
-        [self traversePage:page.child2 withTimestamp:timestamp];
-        [self traversePage:page.child3 withTimestamp:timestamp];
-        [self traversePage:page.child4 withTimestamp:timestamp];
-    } else {
-        // update the page's timestamp
-        page.lastRequestedTimestamp = timestamp;
-        
-        // prune children
-        // !!! replace this with another method that doesn't remove children immediately
-        page.child1 = page.child2 = page.child3 = page.child4 = nil;
+    // is the page below the maximum zoom level?
+    if ( page.tile.z <= self.imageryDatabase.maxzoom )
+    {
+        // is the page onscreen?
+        if ( [page isOnscreenWithCamera:self.camera] )
+        {
+            // is the page facing the camera?
+            float cosTheta = [page calculateTiltWithCamera:self.camera];
+            if ( !( cosTheta < -0.5f || ( page.tile.z > 2 && cosTheta < 0.0f )) )
+            {
+                // should we traverse to load more detail?
+                float texelError = [page calculateScreenSpaceErrorWithCamera:self.camera];
+                if ( texelError > 5.0f )
+                {
+                    // traverse children
+                    [self preparePageForTraversal:page];
+                    
+                    [self traversePage:page.child1 withTimestamp:timestamp];
+                    [self traversePage:page.child2 withTimestamp:timestamp];
+                    [self traversePage:page.child3 withTimestamp:timestamp];
+                    [self traversePage:page.child4 withTimestamp:timestamp];
+                    return;
+                }
+            }
+        }
     }
+                
+    // update the page's timestamp
+    page.lastRequestedTimestamp = timestamp;
+    
+    // prune children
+    // !!! replace this with another method that doesn't remove children immediately
+    page.child1 = page.child2 = page.child3 = page.child4 = nil;
 }
 
 - (void)requestUpdate {

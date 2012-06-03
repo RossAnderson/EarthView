@@ -21,7 +21,16 @@ extern NSString * RACameraStateChangedNotification;
 @property (assign) GLKMatrix4 modelViewMatrix;
 
 @property (readonly) GLKMatrix4 projectionMatrix;
+@property (readonly) float near, far;
 @property (readonly) float tanThetaOverTwo;
+@property (readonly) float cosThetaOverTwo;
+@property (readonly) float sinThetaOverTwo;
+@property (readonly) float aspect;
+
+@property (readonly) GLKVector3 leftPlaneNormal;
+@property (readonly) GLKVector3 rightPlaneNormal;
+@property (readonly) GLKVector3 topPlaneNormal;
+@property (readonly) GLKVector3 bottomPlaneNormal;
 
 - (void)calculateProjectionForBounds:(RABoundingSphere *)bound;
 

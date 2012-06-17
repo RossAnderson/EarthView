@@ -336,13 +336,22 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
                 NSData * data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];
                 
                 if ( error ) {
-                    // attempt to reload if the connection timed out
-                    if ( [[error domain] isEqualToString:NSURLErrorDomain] && [error code] == NSURLErrorTimedOut ) {
-                        page.imageryState = NotLoaded;
-                        return;
+                    // catch common errors
+                    if ( [[error domain] isEqualToString:NSURLErrorDomain] ) {
+                        switch( [error code] ) {
+                            case NSURLErrorTimedOut:
+                                // attempt to reload if the connection timed out
+                                page.imageryState = NotLoaded;
+                                return;
+                            case NSURLErrorNotConnectedToInternet:  // !!! catch other common errors here
+                                // give up if net access is unavailable
+                                page.imageryState = Failed;
+                                return;
+                            default: break;
+                        }
                     }
-                    
-                    NSLog(@"URL loading error): %@", error);
+
+                    NSLog(@"URL loading error: %@", error);
                     page.imageryState = Failed;
                     return;
                 } else if ( [[response MIMEType] isEqualToString:@"text/html"] ) {
@@ -399,13 +408,22 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
                 NSData * data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];
                 
                 if ( error ) {
-                    // attempt to reload if the connection timed out
-                    if ( [[error domain] isEqualToString:NSURLErrorDomain] && [error code] == NSURLErrorTimedOut ) {
-                        page.terrainState = NotLoaded;
-                        return;
+                    // catch common errors
+                    if ( [[error domain] isEqualToString:NSURLErrorDomain] ) {
+                        switch( [error code] ) {
+                            case NSURLErrorTimedOut:
+                                // attempt to reload if the connection timed out
+                                page.terrainState = NotLoaded;
+                                return;
+                            case NSURLErrorNotConnectedToInternet:  // !!! catch other common errors here
+                                // give up if net access is unavailable
+                                page.terrainState = Failed;
+                                return;
+                            default: break;
+                        }
                     }
-                    
-                    NSLog(@"URL Error loading (%@): %@", url, error);
+
+                    NSLog(@"URL loading error: %@", error);
                     page.terrainState = Failed;
                     return;
                 } else if ( [[response MIMEType] isEqualToString:@"text/html"] ) {
@@ -509,28 +527,23 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
         return;
     }
 
-    [self update];
-}
-
-- (void)update {
-    
-    NSTimeInterval currentTime = [NSDate timeIntervalSinceReferenceDate];
-
     // capture self to avoid a retain cycle
     __block RATilePager *mySelf = self;
     
     [_updateQueue addOperationWithBlock:^{
-        // traverse pages gathering ones that are active and should be displayed
-        [mySelf->rootPages enumerateObjectsUsingBlock:^(RAPage *page, BOOL *stop) {
-            [mySelf traversePage:page withTimestamp:currentTime];
-        }];
-        
-        // update again if changes were made during traverse
-        if ( mySelf->_updateAgain ) {
-            mySelf->_updateAgain = NO;
-            [mySelf update];
-        }
+        [mySelf traverse];
     }];
+}
+
+- (void)traverse {
+    NSTimeInterval currentTime = [NSDate timeIntervalSinceReferenceDate];
+
+    do {
+        // traverse pages gathering ones that are active and should be displayed
+        [rootPages enumerateObjectsUsingBlock:^(RAPage *page, BOOL *stop) {
+            [self traversePage:page withTimestamp:currentTime];
+        }];
+    } while( _updateAgain );    // update again if changes were made
 }
 
 @end

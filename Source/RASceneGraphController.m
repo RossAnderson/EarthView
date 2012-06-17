@@ -143,14 +143,14 @@
     
     // setup auxillary context for threaded texture loading operations
     if ( _pager && ! _pager.auxilliaryContext ) _pager.auxilliaryContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:[_context sharegroup]];
-    [_pager setupGL];
     
     // register for notifications
     if ( _camera ) [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(displayNotification:) name:RACameraStateChangedNotification object:_camera];
     if ( _pager ) [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(displayNotification:) name:RATilePagerContentChangedNotification object:_pager];
     
+    _needsUpdate = YES;
+    _needsDisplay = YES;
     [self setupGL];
-    [self update];
 }
 
 - (void)viewDidUnload
@@ -245,7 +245,6 @@
 #pragma mark - UITextFieldDelegate
 
 - (BOOL)textFieldShouldClear:(UITextField *)textField {
-    NSLog(@"Clear!");
     return YES;
 }
 
@@ -273,6 +272,7 @@
 - (void)setupGL
 {
     [EAGLContext setCurrentContext:_context];
+    [glView bindDrawable];
         
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -302,10 +302,7 @@
         [_renderVisitor setupGL];
     }
     
-    [self update];
-    
-    _needsUpdate = YES;
-    _needsDisplay = YES;
+    [_pager setupGL];
 }
 
 - (void)tearDownGL
@@ -329,11 +326,11 @@
         _renderVisitor.lightPosition = lightEcef;
     }
     
-    self.camera.viewport = self.view.bounds;
+    self.camera.viewport = self.glView.bounds;
     [_camera calculateProjectionForBounds: self.sceneRoot.bound];
     
     // update skybox projection
-    float aspect = fabsf(self.view.bounds.size.width / self.view.bounds.size.height);
+    float aspect = fabsf(self.glView.bounds.size.width / self.glView.bounds.size.height);
     GLKMatrix4 projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(_camera.fieldOfView), aspect, 10, 50);
     _skybox.transform.projectionMatrix = projectionMatrix;
     _skybox.transform.modelviewMatrix = self.camera.modelViewMatrix;
@@ -376,8 +373,7 @@
     [RAGeometry cleanupAll:NO];
     
     // show stats
-    if ( statsLabel )
-        [statsLabel setText:_renderVisitor.statsString];
+    [statsLabel setText:_renderVisitor.statsString];
 }
 
 @end

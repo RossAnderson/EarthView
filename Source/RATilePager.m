@@ -34,9 +34,11 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
     RATextureWrapper *      _defaultTexture;
         
     NSOperationQueue *      _updateQueue;
+    NSOperationQueue *      _connectionQueue;
     NSOperationQueue *      _graphicsQueue;
     
-    BOOL                    _updateAgain;
+    BOOL                    _traversing;
+    BOOL                    _traverseAgain;
 }
 
 @synthesize imageryDatabase, terrainDatabase, auxilliaryContext, rootPages, camera;
@@ -45,8 +47,13 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
 {
     self = [super init];
     if (self) {
+        _traversing = NO;
+        
         _updateQueue = [[NSOperationQueue alloc] init];
-        [_updateQueue setName:@"org.dancingrobots.traversequeue"];
+        [_updateQueue setName:@"org.dancingrobots.updatequeue"];
+
+        _connectionQueue = [[NSOperationQueue alloc] init];
+        [_connectionQueue setName:@"org.dancingrobots.connectionqueue"];
 
         _graphicsQueue = [[NSOperationQueue alloc] init];
         [_graphicsQueue setName:@"org.dancingrobots.graphicsqueue"];
@@ -58,6 +65,9 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
 - (void)dealloc {
     [_updateQueue cancelAllOperations];
     [_updateQueue waitUntilAllOperationsAreFinished];
+
+    [_connectionQueue cancelAllOperations];
+    [_connectionQueue waitUntilAllOperationsAreFinished];
 
     [_graphicsQueue cancelAllOperations];
     [_graphicsQueue waitUntilAllOperationsAreFinished];
@@ -311,7 +321,6 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
 
 - (void)requestPage:(RAPage *)page {
     NSAssert( page != nil, @"the requested page must be valid");
-    //const NSUInteger kMaxQueueDepth = 8;
     const NSTimeInterval kTimeoutInterval = 5.0f;
     
     __block RATilePager * mySelf = self;
@@ -328,13 +337,10 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
             // capture ivar locally to avoid retain cycle
             NSOperationQueue * graphicsQueue = _graphicsQueue;
             
-            [_updateQueue addOperationWithBlock:^{
-                NSURLRequest * request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestReturnCacheDataElseLoad timeoutInterval:kTimeoutInterval];
-                NSURLResponse * response = nil;
-                NSError * error = nil;
-                
-                NSData * data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];
-                
+            NSURLRequest * request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:kTimeoutInterval];
+            
+            [NSURLConnection sendAsynchronousRequest:request queue:_connectionQueue completionHandler:^(NSURLResponse* response, NSData* data, NSError* error)
+            {
                 if ( error ) {
                     // catch common errors
                     if ( [[error domain] isEqualToString:NSURLErrorDomain] ) {
@@ -399,14 +405,10 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
             // capture ivar locally to avoid retain cycle
             NSOperationQueue * updateQueue = _updateQueue;
 
-            [_updateQueue addOperationWithBlock:^{
-                NSURLRequest * request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestReturnCacheDataElseLoad timeoutInterval:kTimeoutInterval];
+            NSURLRequest * request = [NSURLRequest requestWithURL:url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:kTimeoutInterval];
 
-                NSURLResponse * response = nil;
-                NSError * error = nil;
-                
-                NSData * data = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:&error];
-                
+            [NSURLConnection sendAsynchronousRequest:request queue:_connectionQueue completionHandler:^(NSURLResponse* response, NSData* data, NSError* error)
+            {
                 if ( error ) {
                     // catch common errors
                     if ( [[error domain] isEqualToString:NSURLErrorDomain] ) {
@@ -464,7 +466,7 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
     [page setCenter:center andRadius:GLKVector3Distance(center, corner)];
     
     // any time we add new pages we should re-traverse to give them an oppurtunity to load
-    _updateAgain = YES;
+    _traverseAgain = YES;
     
     return page;
 }
@@ -522,8 +524,8 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
 
 - (void)requestUpdate {
     // we only want one traversal running at a time, so if busy, schedule it to run again
-    if ( _updateQueue.operationCount > 0 ) {
-        _updateAgain = YES;
+    if ( _traversing ) {
+        _traverseAgain = YES;
         return;
     }
 
@@ -531,19 +533,23 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
     __block RATilePager *mySelf = self;
     
     [_updateQueue addOperationWithBlock:^{
+        mySelf->_traversing = YES;
         [mySelf traverse];
+        mySelf->_traversing = NO;
     }];
 }
 
 - (void)traverse {
     NSTimeInterval currentTime = [NSDate timeIntervalSinceReferenceDate];
-
+    
     do {
+        _traverseAgain = NO;
+        
         // traverse pages gathering ones that are active and should be displayed
         [rootPages enumerateObjectsUsingBlock:^(RAPage *page, BOOL *stop) {
             [self traversePage:page withTimestamp:currentTime];
         }];
-    } while( _updateAgain );    // update again if changes were made
+    } while( _traverseAgain );
 }
 
 @end

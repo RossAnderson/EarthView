@@ -129,7 +129,6 @@
         // upload image
         glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
         glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels );
-        //glGenerateMipmap( GL_TEXTURE_2D );    // results in poor image quality when tilted
         
         CGContextRelease(context);
         CGColorSpaceRelease(colorSpace);

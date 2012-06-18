@@ -44,7 +44,6 @@
     CADisplayLink *     _displayLink;
     
     BOOL                _needsDisplay;
-    BOOL                _needsUpdate;
 }
 
 - (void)setupGL;
@@ -148,9 +147,9 @@
     if ( _camera ) [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(displayNotification:) name:RACameraStateChangedNotification object:_camera];
     if ( _pager ) [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(displayNotification:) name:RATilePagerContentChangedNotification object:_pager];
     
-    _needsUpdate = YES;
     _needsDisplay = YES;
     [self setupGL];
+    [_pager requestUpdate];
 }
 
 - (void)viewDidUnload
@@ -193,11 +192,6 @@
 }
 
 - (void)displayLinkUpdate:(CADisplayLink *)sender {
-    if ( _needsUpdate && ( pagingEnable == nil || pagingEnable.on ) ) {
-        [_pager requestUpdate];
-        _needsUpdate = NO;
-    }
-    
     if ( _needsDisplay ) {
         [self update];
         [glView display];
@@ -207,9 +201,7 @@
 }
 
 - (void)displayNotification:(NSNotification *)note {
-    if ( [[note name] isEqualToString:RACameraStateChangedNotification] )
-        _needsUpdate = YES;
-    
+    [_pager requestUpdate];
     _needsDisplay = YES;
 }
 

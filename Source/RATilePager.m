@@ -518,22 +518,24 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
     page.lastRequestedTimestamp = timestamp;
     
     // prune children
-    // !!! replace this with another method that doesn't remove children immediately
     page.child1 = page.child2 = page.child3 = page.child4 = nil;
 }
 
 - (void)requestUpdate {
-    // we only want one traversal running at a time, so if busy, schedule it to run again
-    if ( _traversing ) {
-        _traverseAgain = YES;
-        return;
+    @synchronized(self) {
+        // we only want one traversal running at a time, so if busy, schedule it to run again
+        if ( _traversing ) {
+            _traverseAgain = YES;
+            return;
+        }
+        
+        _traversing = YES;
     }
-
+    
     // capture self to avoid a retain cycle
     __block RATilePager *mySelf = self;
     
     [_updateQueue addOperationWithBlock:^{
-        mySelf->_traversing = YES;
         [mySelf traverse];
         mySelf->_traversing = NO;
     }];

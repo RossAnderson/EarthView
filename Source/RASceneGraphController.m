@@ -137,7 +137,6 @@
     
     // setup display link to update the view
     _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(displayLinkUpdate:)];
-    _displayLink.frameInterval = 2;
     [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
     
     // setup auxillary context for threaded texture loading operations

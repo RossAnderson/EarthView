@@ -105,8 +105,6 @@ TileID TileOppositeCorner( TileID t ) {
         tile.y = tilecount - 1 - tile.y;
     }
     
-    // !!! check in bounds
-    
     // pick base string at random
     NSUInteger urlIndex = rand() % baseUrlStrings.count;
     NSMutableString * urlString = [[self.baseUrlStrings objectAtIndex:urlIndex] mutableCopy];

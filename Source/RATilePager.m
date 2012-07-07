@@ -19,16 +19,10 @@
 
 NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNotification";
 
-
-@interface RAPageDelta : NSObject
-@property (strong) NSSet * pagesToAdd;
-@property (strong) NSSet * pagesToRemove;
+@interface RATilePager (PrivateMethods)
+- (RAPage *)makeLeafPageForTile:(TileID)t withParent:(RAPage *)parent;
+- (void)traverse;
 @end
-
-@implementation RAPageDelta
-@synthesize pagesToAdd, pagesToRemove;
-@end
-
 
 @implementation RATilePager {
     RATextureWrapper *      _defaultTexture;
@@ -39,9 +33,11 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
     
     BOOL                    _traversing;
     BOOL                    _traverseAgain;
+    
+    NSSet *                 _rootPages;
 }
 
-@synthesize imageryDatabase, terrainDatabase, auxilliaryContext, rootPages, camera;
+@synthesize imageryDatabase, terrainDatabase, auxilliaryContext, camera;
 
 - (id)init
 {
@@ -74,7 +70,7 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
 }
 
 - (void)setupPages {
-    if ( ! rootPages ) {
+    if ( ! _rootPages ) {
         // build root pages
         NSMutableSet * pages = [NSMutableSet set];
         
@@ -91,8 +87,12 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
             }
         }
         
-        rootPages = [NSSet setWithSet:pages];
+        _rootPages = [NSSet setWithSet:pages];
     }
+}
+
+- (NSSet *)rootPages {
+    return _rootPages;
 }
 
 - (void)setupGL {
@@ -548,7 +548,7 @@ NSString * RATilePagerContentChangedNotification = @"RATilePagerContentChangedNo
         _traverseAgain = NO;
         
         // traverse pages gathering ones that are active and should be displayed
-        [rootPages enumerateObjectsUsingBlock:^(RAPage *page, BOOL *stop) {
+        [_rootPages enumerateObjectsUsingBlock:^(RAPage *page, BOOL *stop) {
             [self traversePage:page withTimestamp:currentTime];
         }];
     } while( _traverseAgain );

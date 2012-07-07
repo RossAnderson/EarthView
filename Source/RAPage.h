@@ -26,8 +26,8 @@ typedef enum {
 @interface RAPage : NSObject
 
 @property (readonly, nonatomic) TileID tile;
-@property (readonly, nonatomic) NSString * key;
-@property (readonly, nonatomic) RABoundingSphere * bound;
+@property (readonly, strong, nonatomic) NSString * key;
+@property (readonly, strong, nonatomic) RABoundingSphere * bound;
 
 @property (readonly, weak, nonatomic) RAPage * parent;
 @property (strong, nonatomic) RAPage * child1;

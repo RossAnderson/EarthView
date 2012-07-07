@@ -35,7 +35,6 @@
 
 #pragma mark -
 
-
 @interface RASceneGraphController () {
     RARenderVisitor *   _renderVisitor;
     
@@ -48,6 +47,9 @@
 
 - (void)setupGL;
 - (void)tearDownGL;
+- (void)setupSceneObjects;
+- (RANode *)createSceneGraphForPager:(RATilePager *)pager;
+- (void)update;
 
 @end
 

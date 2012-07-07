@@ -35,6 +35,10 @@ typedef enum {
     GestureTilt
 } GestureAction;
 
+@interface RAManipulator (PrivateMethods)
+- (void)updateCamera;
+- (void)stop:(id)sender;
+@end
 
 @implementation RAManipulator {
     CameraState     _state;

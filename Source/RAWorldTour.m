@@ -11,6 +11,10 @@
 
 static const double kAnimationDuration = 5;
 
+@interface RAWorldTour (PrivateMethods)
+- (void)next:(id)sender;
+@end
+
 @implementation RAWorldTour {
     NSTimer * timer;
 }

@@ -8,6 +8,11 @@
 
 #import "RAShaderProgram.h"
 
+@interface RAShaderProgram (PrivateMethods)
+- (BOOL)compileShader:(GLuint *)shader type:(GLenum)type file:(NSString *)file;
+- (BOOL)validateProgram:(GLuint)prog;
+@end
+
 @implementation RAShaderProgram {
     GLuint      _program;
     BOOL        _linked;

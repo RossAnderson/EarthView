@@ -53,6 +53,10 @@ enum
 
 #pragma mark -
 
+@interface RARenderVisitor (PrivateMethods)
+- (void)traversePage:(RAPage *)page withModelViewProjectionMatrix:(GLKMatrix4)matrix;
+@end
+
 @implementation RARenderVisitor {
     NSMutableArray *    renderQueue;
     RAShaderProgram *   shader;
